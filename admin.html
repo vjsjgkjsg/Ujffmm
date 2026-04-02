@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Панель администратора — Навигатор СКО</title>
+<base href="./">
+<script>
+(function(){
+  var r=sessionStorage.getItem('psess_user');
+  if(!r){window.location.replace('auth.html');return;}
+  try{var u=JSON.parse(r);if(u.role!=='admin')window.location.replace('index.html');}
+  catch(e){window.location.replace('auth.html');}
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ═══════════════════════════════════════
+   ADMIN PANEL — Professional Design
+   ═══════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:        #0a0f1e;
+  --bg2:       #0f1729;
+  --bg3:       #162040;
+  --card:      #111d35;
+  --card2:     #162238;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.04);
+  --text:      #e8f0ff;
+  --text2:     rgba(180,200,255,0.65);
+  --text3:     rgba(180,200,255,0.3);
+  --accent:    #2563eb;
+  --accent2:   rgba(37,99,235,0.18);
+  --accent3:   rgba(37,99,235,0.08);
+  --green:     #10b981;
+  --green2:    rgba(16,185,129,0.15);
+  --red:       #ef4444;
+  --red2:      rgba(239,68,68,0.15);
+  --yellow:    #f59e0b;
+  --yellow2:   rgba(245,158,11,0.15);
+  --purple:    #8b5cf6;
+  --purple2:   rgba(139,92,246,0.15);
+  --r:         12px;
+  --r2:        16px;
+  --r3:        20px;
+  --shadow:    0 4px 24px rgba(0,0,0,0.4);
+  --shadow2:   0 8px 40px rgba(0,0,0,0.5);
+  --ease:      cubic-bezier(0.4,0,0.2,1);
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;
+  display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+
+/* ═══ СКРОЛЛБАР ═══ */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15)}
+
+/* ═══ TOPBAR ═══ */
+.topbar{
+  height:58px;background:var(--card);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;
+  position:relative;z-index:100;
+  box-shadow:0 2px 20px rgba(0,0,0,0.3);
+}
+.tb-logo{display:flex;align-items:center;gap:10px}
+.tb-emblem{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),#7c3aed);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  box-shadow:0 2px 10px rgba(37,99,235,0.4);flex-shrink:0;
+}
+.tb-title-wrap{display:flex;flex-direction:column}
+.tb-title{font-size:15px;font-weight:800;letter-spacing:-0.3px}
+.tb-sub{font-size:10px;color:var(--text3);letter-spacing:0.3px;text-transform:uppercase}
+.tb-badge{
+  background:linear-gradient(135deg,var(--red),#dc2626);
+  color:#fff;font-size:10px;font-weight:800;
+  padding:3px 8px;border-radius:20px;letter-spacing:0.3px;
+}
+.tb-sep{flex:1}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-user{display:flex;align-items:center;gap:8px}
+.tb-av{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),#7c3aed);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;
+}
+.tb-name{font-size:13px;font-weight:700;color:var(--text2)}
+.btn-tb{
+  padding:7px 14px;border-radius:var(--r);border:1px solid var(--border);
+  background:var(--card2);color:var(--text2);font-family:inherit;
+  font-size:12px;font-weight:700;cursor:pointer;transition:all .2s var(--ease);
+  text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+}
+.btn-tb:hover{background:var(--bg3);color:var(--text);border-color:rgba(255,255,255,0.12)}
+.btn-tb-red:hover{border-color:rgba(239,68,68,0.4);color:#fca5a5;background:rgba(239,68,68,0.08)}
+
+/* ═══ LAYOUT ═══ */
+.layout{display:flex;flex:1;overflow:hidden}
+
+/* ═══ SIDEBAR ═══ */
+.sidebar{
+  width:224px;flex-shrink:0;
+  background:var(--card);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;
+}
+.sb-section{padding:6px 10px}
+.sb-section-title{
+  font-size:9px;font-weight:800;color:var(--text3);
+  text-transform:uppercase;letter-spacing:1px;
+  padding:8px 8px 4px;
+}
+.sb-item{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;
+  border-radius:10px;cursor:pointer;color:var(--text2);
+  font-size:13px;font-weight:600;transition:all .18s var(--ease);
+  border:none;background:none;font-family:inherit;width:100%;text-align:left;
+  position:relative;margin-bottom:1px;
+}
+.sb-item:hover{background:var(--card2);color:var(--text)}
+.sb-item.active{
+  background:var(--accent2);color:#60a5fa;
+  border:1px solid rgba(37,99,235,0.25);
+}
+.sb-icon{
+  width:30px;height:30px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;flex-shrink:0;background:var(--bg3);transition:all .18s;
+}
+.sb-item.active .sb-icon{background:var(--accent2)}
+.sb-item:hover .sb-icon{background:var(--bg3)}
+.sb-count{
+  margin-left:auto;background:var(--accent2);color:#60a5fa;
+  font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;
+}
+.sb-count.red{background:var(--red2);color:#fca5a5}
+.sb-divider{height:1px;background:var(--border);margin:6px 10px}
+
+/* ═══ MAIN ═══ */
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.page{display:none;padding:24px;flex:1;animation:pgIn .2s var(--ease)}
+.page.active{display:flex;flex-direction:column}
+@keyframes pgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ PAGE HEADER ═══ */
+.pg-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap}
+.pg-hd-left{}
+.pg-title{font-size:22px;font-weight:900;letter-spacing:-0.5px}
+.pg-sub{font-size:13px;color:var(--text2);margin-top:3px}
+.pg-hd-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* ═══ КАРТОЧКИ СТАТИСТИКИ ═══ */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
+.stat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r2);
+  padding:18px 20px;position:relative;overflow:hidden;transition:all .2s var(--ease);
+}
+.stat-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--sc-color,var(--accent));border-radius:var(--r2) var(--r2) 0 0;
+}
+.stat-card:hover{border-color:rgba(255,255,255,0.12);transform:translateY(-2px);box-shadow:var(--shadow)}
+.stat-icon{
+  width:40px;height:40px;border-radius:10px;
+  background:var(--sc-bg,var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  margin-bottom:12px;
+}
+.stat-val{font-size:28px;font-weight:900;letter-spacing:-1px;line-height:1}
+.stat-label{font-size:12px;color:var(--text2);margin-top:4px;font-weight:600}
+.stat-delta{font-size:11px;margin-top:6px;font-weight:700}
+.stat-delta.up{color:var(--green)}
+.stat-delta.down{color:var(--red)}
+
+/* ═══ КАРТОЧКИ (блоки) ═══ */
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r2);
+  margin-bottom:16px;overflow:hidden;
+}
+.card-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border-bottom:1px solid var(--border);gap:10px;
+}
+.card-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px}
+.card-title-icon{
+  width:28px;height:28px;border-radius:8px;background:var(--accent2);
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;
+}
+.card-actions{display:flex;gap:8px;align-items:center}
+.card-body{padding:20px}
+.card-body-slim{padding:0}
+
+/* ═══ ТАБЛИЦЫ ═══ */
+.table-wrap{overflow-x:auto}
+.table{width:100%;border-collapse:collapse}
+.table th{
+  text-align:left;font-size:11px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.6px;
+  padding:10px 16px;border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+.table td{
+  padding:13px 16px;border-bottom:1px solid var(--border2);
+  font-size:13px;vertical-align:middle;
+}
+.table tr:last-child td{border-bottom:none}
+.table tbody tr{transition:background .15s}
+.table tbody tr:hover td{background:rgba(255,255,255,0.02)}
+.av{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:13px;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--purple));
+}
+.av-sm{width:28px;height:28px;font-size:11px}
+.badge{
+  display:inline-flex;align-items:center;padding:3px 9px;
+  border-radius:20px;font-size:11px;font-weight:700;
+}
+.badge-blue{background:var(--accent2);color:#60a5fa;border:1px solid rgba(37,99,235,0.25)}
+.badge-green{background:var(--green2);color:#6ee7b7;border:1px solid rgba(16,185,129,0.25)}
+.badge-red{background:var(--red2);color:#fca5a5;border:1px solid rgba(239,68,68,0.25)}
+.badge-yellow{background:var(--yellow2);color:#fcd34d;border:1px solid rgba(245,158,11,0.25)}
+.badge-purple{background:var(--purple2);color:#c4b5fd;border:1px solid rgba(139,92,246,0.25)}
+.badge-gray{background:rgba(255,255,255,0.06);color:var(--text2);border:1px solid var(--border)}
+
+/* ═══ КНОПКИ ═══ */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 16px;border-radius:var(--r);border:none;
+  font-family:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .2s var(--ease);
+}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 10px rgba(37,99,235,0.3)}
+.btn-primary:hover{background:#1d4ed8;transform:translateY(-1px);box-shadow:0 4px 16px rgba(37,99,235,0.4)}
+.btn-primary:active{transform:scale(.97)}
+.btn-success{background:var(--green);color:#fff;box-shadow:0 2px 10px rgba(16,185,129,0.3)}
+.btn-success:hover{background:#059669;transform:translateY(-1px)}
+.btn-danger{background:var(--red2);color:#fca5a5;border:1px solid rgba(239,68,68,0.25)}
+.btn-danger:hover{background:rgba(239,68,68,0.25);border-color:rgba(239,68,68,0.4)}
+.btn-ghost{background:var(--card2);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--bg3);color:var(--text);border-color:rgba(255,255,255,0.12)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:var(--r)}
+.btn-icon{
+  width:32px;height:32px;padding:0;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+}
+.btn-loading{opacity:.6;pointer-events:none}
+.btn-loading::after{
+  content:'';width:14px;height:14px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══ ФОРМЫ ═══ */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid.one{grid-template-columns:1fr}
+.form-grid.three{grid-template-columns:1fr 1fr 1fr}
+.form-span{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px}
+.field input,.field select,.field textarea{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+  padding:10px 14px;color:var(--text);font-family:inherit;font-size:14px;
+  outline:none;transition:all .2s;width:100%;
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  border-color:var(--accent);background:rgba(37,99,235,0.06);
+  box-shadow:0 0 0 3px rgba(37,99,235,0.12);
+}
+.field input::placeholder,.field textarea::placeholder{color:var(--text3)}
+.field select option{background:#162040}
+.field textarea{resize:vertical;min-height:80px;line-height:1.5}
+.field-hint{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* ═══ ЗАГРУЗКА ФАЙЛА ═══ */
+.upload-zone{
+  border:2px dashed rgba(37,99,235,0.35);border-radius:var(--r2);
+  padding:36px 20px;text-align:center;cursor:pointer;
+  transition:all .25s var(--ease);position:relative;
+  background:rgba(37,99,235,0.04);
+}
+.upload-zone:hover,.upload-zone.over{
+  border-color:var(--accent);background:rgba(37,99,235,0.09);
+  transform:scale(1.01);
+}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.uz-icon{font-size:44px;margin-bottom:12px;display:block;filter:drop-shadow(0 0 12px rgba(37,99,235,0.4))}
+.uz-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:5px}
+.uz-sub{font-size:13px;color:var(--text2)}
+.uz-hint{font-size:11px;color:var(--text3);margin-top:4px}
+.file-selected{border-color:var(--accent);background:rgba(37,99,235,0.08);padding:16px 20px}
+.file-sel-row{display:flex;align-items:center;gap:12px}
+.file-sel-icon{font-size:32px;flex-shrink:0}
+.file-sel-name{font-weight:700;font-size:14px;word-break:break-all}
+.file-sel-size{font-size:12px;color:var(--text2);margin-top:2px}
+.btn-change{margin-left:auto;flex-shrink:0}
+
+/* ═══ ПРОГРЕСС ═══ */
+.prog-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:12px}
+.prog-fill{
+  height:100%;border-radius:3px;width:0%;
+  background:linear-gradient(90deg,var(--accent),var(--green));
+  transition:width .4s var(--ease);
+}
+.prog-text{font-size:12px;color:var(--text2);margin-top:6px;text-align:center}
+
+/* ═══ МАТЕРИАЛ СТРОКА ═══ */
+.mat-row{
+  display:flex;align-items:center;gap:14px;padding:14px 20px;
+  border-bottom:1px solid var(--border2);transition:background .15s;
+}
+.mat-row:last-child{border-bottom:none}
+.mat-row:hover{background:rgba(255,255,255,0.02)}
+.mat-icon{font-size:28px;flex-shrink:0}
+.mat-info{flex:1;min-width:0}
+.mat-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mat-meta{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
+.mat-sec{
+  display:inline-block;padding:2px 8px;border-radius:6px;
+  font-size:10px;font-weight:700;background:var(--accent2);color:#60a5fa;
+}
+.mat-date{font-size:11px;color:var(--text3)}
+.mat-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* ═══ АЛЕРТ ═══ */
+.alert{
+  padding:12px 16px;border-radius:var(--r);font-size:13px;font-weight:600;
+  display:none;animation:pgIn .2s var(--ease);margin-top:12px;
+}
+.alert.ok{background:var(--green2);color:#6ee7b7;border:1px solid rgba(16,185,129,0.3)}
+.alert.err{background:var(--red2);color:#fca5a5;border:1px solid rgba(239,68,68,0.3)}
+.alert.info{background:var(--accent2);color:#93c5fd;border:1px solid rgba(37,99,235,0.3)}
+
+/* ═══ ТОСТ ═══ */
+#toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  padding:12px 20px;border-radius:var(--r);font-size:14px;font-weight:700;
+  display:none;box-shadow:var(--shadow2);animation:toastIn .3s var(--ease);
+  max-width:320px;pointer-events:none;
+}
+#toast.ok{background:var(--green);color:#fff}
+#toast.err{background:var(--red);color:#fff}
+#toast.info{background:var(--accent);color:#fff}
+@keyframes toastIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ ПУСТО ═══ */
+.empty{text-align:center;padding:48px 20px;color:var(--text3)}
+.empty-ico{font-size:48px;margin-bottom:12px;opacity:.5}
+.empty-txt{font-size:14px;font-weight:600}
+.empty-sub{font-size:12px;margin-top:4px}
+
+/* ═══ ГРАФ ═══ */
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:16px}
+.chart-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.chart-wrap{position:relative;height:200px}
+
+/* ═══ ПОЛЬЗОВАТЕЛЬ СТРОКА ═══ */
+.user-row{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;
+  border-radius:var(--r);margin-bottom:4px;
+  background:var(--card2);border:1px solid var(--border2);
+  transition:all .15s;
+}
+.user-row:hover{border-color:var(--border);background:var(--bg3)}
+.user-info{flex:1;min-width:0}
+.user-name{font-weight:700;font-size:14px}
+.user-login{font-size:12px;color:var(--text3);font-family:monospace;margin-top:2px}
+.user-actions{display:flex;gap:6px;align-items:center}
+
+/* ═══ МОДАЛКА ═══ */
+.modal-bg{
+  position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.7);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  backdrop-filter:blur(4px);animation:pgIn .2s var(--ease);
+}
+.modal{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r3);
+  width:100%;max-width:480px;max-height:90vh;overflow-y:auto;
+  box-shadow:var(--shadow2);animation:modalIn .3s var(--ease);
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:16px;font-weight:800}
+.modal-body{padding:20px}
+.modal-foot{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+/* ═══ MOBILE ═══ */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;
+  background:var(--card);border-top:1px solid var(--border);z-index:100;padding:6px 4px}
+.mobile-nav-inner{display:flex;justify-content:space-around}
+.mob-btn{display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:5px 10px;border-radius:var(--r);border:none;background:none;
+  cursor:pointer;font-family:inherit;color:var(--text2);transition:all .15s}
+.mob-btn.active{color:var(--accent)}
+.mob-btn span:first-child{font-size:18px}
+.mob-btn span:last-child{font-size:9px;font-weight:700}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .mobile-nav{display:block}
+  .main{padding-bottom:70px}
+  .page{padding:16px}
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:10px}
+  .form-grid{grid-template-columns:1fr}
+  .form-grid.three{grid-template-columns:1fr}
+  .table th:nth-child(n+4),.table td:nth-child(n+4){display:none}
+  .pg-hd{flex-direction:column;gap:10px}
+}
+@media(max-width:480px){
+  .stats-row{grid-template-columns:1fr 1fr}
+  .stat-card{padding:14px}
+  .stat-val{font-size:22px}
+  .topbar{padding:0 12px}
+  .tb-name{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ TOPBAR ═══════════ -->
+<div class="topbar">
+  <div class="tb-logo">
+    <div class="tb-emblem">🛡️</div>
+    <div class="tb-title-wrap">
+      <span class="tb-title">Панель администратора</span>
+      <span class="tb-sub">Цифровой навигатор СКО</span>
+    </div>
+    <span class="tb-badge">ADMIN</span>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-right">
+    <div class="tb-user">
+      <div class="tb-av" id="tb-av">А</div>
+      <span class="tb-name" id="tb-name">Администратор</span>
+    </div>
+    <a href="index.html?preview=1" class="btn-tb">🌐 Сайт</a>
+    <button class="btn-tb btn-tb-red" onclick="doLogout()">Выйти</button>
+  </div>
+</div>
+
+<!-- ═══════════ LAYOUT ═══════════ -->
+<div class="layout">
+
+<!-- ═══ SIDEBAR ═══ -->
+<div class="sidebar">
+  <div class="sb-section">
+    <div class="sb-section-title">Основное</div>
+    <button class="sb-item active" data-pg="dashboard" onclick="showPg('dashboard',this)">
+      <div class="sb-icon">📊</div> Дашборд
+    </button>
+    <button class="sb-item" data-pg="upload" onclick="showPg('upload',this)">
+      <div class="sb-icon">⬆️</div> Загрузить файл
+    </button>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-title">Управление</div>
+    <button class="sb-item" data-pg="materials" onclick="showPg('materials',this)">
+      <div class="sb-icon">📁</div> Материалы
+      <span class="sb-count" id="sb-cnt-materials">—</span>
+    </button>
+    <button class="sb-item" data-pg="teachers" onclick="showPg('teachers',this)">
+      <div class="sb-icon">👩‍🏫</div> Педагоги
+      <span class="sb-count" id="sb-cnt-teachers">—</span>
+    </button>
+    <button class="sb-item" data-pg="users" onclick="showPg('users',this)">
+      <div class="sb-icon">👥</div> Пользователи
+      <span class="sb-count" id="sb-cnt-users">—</span>
+    </button>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-title">Контент</div>
+    <button class="sb-item" data-pg="broadcasts" onclick="showPg('broadcasts',this)">
+      <div class="sb-icon">📢</div> Объявления
+    </button>
+    <button class="sb-item" data-pg="events" onclick="showPg('events',this)">
+      <div class="sb-icon">📅</div> Мероприятия
+    </button>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-title">Система</div>
+    <button class="sb-item" data-pg="analytics" onclick="showPg('analytics',this)">
+      <div class="sb-icon">📈</div> Аналитика
+    </button>
+    <button class="sb-item" data-pg="security" onclick="showPg('security',this)">
+      <div class="sb-icon">🔒</div> Безопасность
+      <span class="sb-count red" id="sb-cnt-blocks" style="display:none">!</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main" id="main-area">
+
+<!-- ════════════════════════════════
+     📊 ДАШБОРД
+════════════════════════════════ -->
+<div class="page active" id="pg-dashboard">
+  <div class="pg-hd">
+    <div class="pg-hd-left">
+      <div class="pg-title">📊 Дашборд</div>
+      <div class="pg-sub">Общая статистика портала</div>
+    </div>
+    <div class="pg-hd-right">
+      <button class="btn btn-ghost btn-sm" onclick="loadDashboard()">🔄 Обновить</button>
+    </div>
+  </div>
+
+  <!-- Статы -->
+  <div class="stats-row" id="dash-stats">
+    <div class="stat-card" style="--sc-color:#2563eb;--sc-bg:rgba(37,99,235,0.12)">
+      <div class="stat-icon">👥</div>
+      <div class="stat-val" id="st-users">—</div>
+      <div class="stat-label">Пользователей</div>
+    </div>
+    <div class="stat-card" style="--sc-color:#10b981;--sc-bg:rgba(16,185,129,0.12)">
+      <div class="stat-icon">👩‍🏫</div>
+      <div class="stat-val" id="st-teachers">—</div>
+      <div class="stat-label">Педагогов</div>
+    </div>
+    <div class="stat-card" style="--sc-color:#8b5cf6;--sc-bg:rgba(139,92,246,0.12)">
+      <div class="stat-icon">📁</div>
+      <div class="stat-val" id="st-materials">—</div>
+      <div class="stat-label">Материалов</div>
+    </div>
+    <div class="stat-card" style="--sc-color:#f59e0b;--sc-bg:rgba(245,158,11,0.12)">
+      <div class="stat-icon">🎮</div>
+      <div class="stat-val" id="st-games">—</div>
+      <div class="stat-label">Игр сыграно</div>
+    </div>
+    <div class="stat-card" style="--sc-color:#06b6d4;--sc-bg:rgba(6,182,212,0.12)">
+      <div class="stat-icon">⚡</div>
+      <div class="stat-val" id="st-sessions">—</div>
+      <div class="stat-label">Активных сессий</div>
+    </div>
+    <div class="stat-card" style="--sc-color:#ec4899;--sc-bg:rgba(236,72,153,0.12)">
+      <div class="stat-icon">💬</div>
+      <div class="stat-val" id="st-msgs">—</div>
+      <div class="stat-label">Сообщений (30д)</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <!-- Последние регистрации -->
+    <div class="card" style="margin-bottom:0">
+      <div class="card-head">
+        <span class="card-title"><div class="card-title-icon">🆕</div> Новые пользователи</span>
+        <button class="btn btn-ghost btn-sm" onclick="loadDashboard()">🔄</button>
+      </div>
+      <div class="card-body-slim" id="dash-new-users">
+        <div class="empty"><div class="empty-ico">⏳</div></div>
+      </div>
+    </div>
+    <!-- Последние материалы -->
+    <div class="card" style="margin-bottom:0">
+      <div class="card-head">
+        <span class="card-title"><div class="card-title-icon">📄</div> Последние файлы</span>
+        <button class="btn btn-ghost btn-sm" onclick="showPg('materials')">Все →</button>
+      </div>
+      <div class="card-body-slim" id="dash-new-mats">
+        <div class="empty"><div class="empty-ico">⏳</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- График активности -->
+  <div class="chart-card">
+    <div class="chart-title">
+      <span>📈 Входы за последние 14 дней</span>
+      <span style="font-size:12px;color:var(--text3)" id="dash-chart-label"></span>
+    </div>
+    <div class="chart-wrap"><canvas id="chart-logins"></canvas></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     ⬆️ ЗАГРУЗИТЬ ФАЙЛ
+════════════════════════════════ -->
+<div class="page" id="pg-upload">
+  <div class="pg-hd">
+    <div class="pg-hd-left">
+      <div class="pg-title">⬆️ Загрузить файл</div>
+      <div class="pg-sub">Опубликовать материал на портале</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title"><div class="card-title-icon">📂</div> Новый материал</span>
+    </div>
+    <div class="card-body">
+      <!-- Дроп зона -->
+      <div id="upload-zone-wrap">
+        <div class="upload-zone" id="upload-zone"
+          ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)">
+          <input type="file" id="u-file" accept=".pdf,.pptx,.ppt,.docx,.doc,.xlsx" onchange="onFileSelect(this)">
+          <span class="uz-icon">📂</span>
+          <div class="uz-title">Перетащите файл сюда или нажмите</div>
+          <div class="uz-sub">Файл сразу появится на сайте в выбранном разделе</div>
+          <div class="uz-hint">PDF · PPTX · DOCX · XLSX — максимум 50MB</div>
+        </div>
+      </div>
+      <!-- Файл выбран -->
+      <div id="file-chosen-wrap" style="display:none">
+        <div class="upload-zone file-selected">
+          <div class="file-sel-row">
+            <div class="file-sel-icon" id="fc-icon">📄</div>
+            <div>
+              <div class="file-sel-name" id="fc-name"></div>
+              <div class="file-sel-size" id="fc-size"></div>
+            </div>
+            <button class="btn btn-ghost btn-sm btn-change" onclick="resetUpload()">✕ Изменить</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Форма -->
+      <div id="upload-form" style="display:none;margin-top:18px">
+        <div class="form-grid" style="margin-bottom:14px">
+          <div class="field">
+            <label>Название *</label>
+            <input type="text" id="u-title" placeholder="Название документа">
+          </div>
+          <div class="field">
+            <label>Раздел публикации *</label>
+            <select id="u-section">
+              <option value="metodichka">📚 Методическая копилка</option>
+              <option value="presentations">📊 Презентации</option>
+              <option value="talks">💬 Полезные беседы</option>
+            </select>
+          </div>
+          <div class="field form-span">
+            <label>Описание</label>
+            <textarea id="u-desc" placeholder="Краткое описание содержания..."></textarea>
+          </div>
+        </div>
+
+        <div id="upload-prog" style="display:none">
+          <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+          <div class="prog-text" id="prog-text">Загрузка...</div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="btn-upload" onclick="doUpload()">
+            🚀 Опубликовать на портале
+          </button>
+          <button class="btn btn-ghost" onclick="resetUpload()">Отмена</button>
+        </div>
+        <div class="alert" id="alert-upload"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     📁 МАТЕРИАЛЫ
+════════════════════════════════ -->
+<div class="page" id="pg-materials">
+  <div class="pg-hd">
+    <div class="pg-hd-left">
+      <div class="pg-title">📁 Материалы</div>
+      <div class="pg-sub">Все опубликованные файлы</div>
+    </div>
+    <div class="pg-hd-right">
+      <select id="mat-filter-sel" onchange="loadMaterials()"
+        style="background:var(--card2);border:1px solid var(--border);color:var(--text2);
+               padding:7px 12px;border-radius:var(--r);font-family:inherit;font-size:13px">
+        <option value="">Все разделы</option>
+        <option value="metodichka">📚 Методичка</option>
+        <option value="presentations">📊 Презентации</option>
+        <option value="talks">💬 Беседы</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="loadMaterials()">🔄</button>
+      <button class="btn btn-primary btn-sm" onclick="showPg('upload')">⬆️ Загрузить</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body-slim" id="mat-list">
+      <div class="empty"><div class="empty-ico">⏳</div><div class="empty-txt">Загрузка...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     👩‍🏫 ПЕДАГОГИ
+════════════════════════════════ -->
+<div class="page" id="pg-teachers">
+  <div class="pg-hd">
+    <div class="pg-hd-left">
+      <div class="pg-title">👩‍🏫 Педагоги</div>
+      <div class="pg-sub">Управление аккаунтами педагогов</div>
+    </div>
+    <div class="pg-hd-right">
+      <button class="btn btn-primary btn-sm" onclick="openAddTeacherModal()">➕ Добавить педагога</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title"><div class="card-title-icon">📋</div> Список педагогов</span>
+      <div class="card-actions">
+        <input id="teacher-search" placeholder="🔍 Поиск..." onInput="filterTeachers(this.value)"
+          style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+                 padding:7px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;width:180px">
+        <button class="btn btn-ghost btn-sm" onclick="loadTeachers()">🔄</button>
+      </div>
+    </div>
+    <div class="card-body-slim">
+      <div class="table-wrap">
+        <table class="table" id="teachers-table">
+          <thead><tr>
+            <th></th><th>Имя</th><th>Логин</th><th>Статус</th><th>Дата</th><th style="text-align:right">Действия</th>
+          </tr></thead>
+          <tbody id="teachers-body">
+            <tr><td colspan="6"><div class="empty"><div class="empty-ico">⏳</div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     👥 ПОЛЬЗОВАТЕЛИ
+════════════════════════════════ -->
+<div class="page" id="pg-users">
+  <div class="pg-hd">
+    <div class="pg-hd-left">
+      <div class="pg-title">👥 Все пользователи</div>
+      <div class="pg-sub">Зарегистрированные аккаунты</div>
+    </div>
+    <div class="pg-hd-right">
+      <button class="btn btn-ghost btn-sm" onclick="loadUsers()">🔄</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title"><div class="card-title-icon">🗃️</div> Реестр</span>
+      <input id="user-search" placeholder="🔍 Поиск..." onInput="filterUsers(this.value)"
+        style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+               padding:7px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;width:200px">
+    </div>
+    <div class="card-body-slim">
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr>
+            <th></th><th>Имя</th><th>Логин</th><th>Роль</th><th>Дата регистрации</th><th style="text-align:right">Действия</th>
+          </tr></thead>
+          <tbody id="users-body">
+            <tr><td colspan="5"><div class="empty"><div class="empty-ico">⏳</div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     📢 ОБЪЯВЛЕНИЯ
+════════════════════════════════ -->
+<div class="page" id="pg-broadcasts">
+  <div class="pg-hd">
+    <div class="pg-hd-left">
+      <div class="pg-title">📢 Объявления</div>
+      <div class="pg-sub">Сообщения для всех педагогов на главной странице</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title"><div class="card-title-icon">✏️</div> Новое объявление</span>
+    </div>
+    <div class="card-body">
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class="field">
+          <label>Заголовок *</label>
+          <input type="text" id="bc-title" placeholder="Заголовок объявления">
+        </div>
+        <div class="field form-span">
+          <label>Текст *</label>
+          <textarea id="bc-text" rows="3" placeholder="Текст объявления..."></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="sendBroadcast()">📢 Опубликовать</button>
+      <div class="alert" id="alert-bc"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title"><div class="card-title-icon">📋</div> Опубликованные</span>
+      <button class="btn btn-ghost btn-sm" onclick="loadBroadcasts()">🔄</button>
+    </div>
+    <div class="card-body-slim" id="bc-list">
+      <div class="empty"><div class="empty-ico">⏳</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     📅 МЕРОПРИЯТИЯ
+════════════════════════════════ -->
+<div class="page" id="pg-events">
+  <div class="pg-hd">
+    <div class="pg-hd-left">
+      <div class="pg-title">📅 Мероприятия</div>
+      <div class="pg-sub">Расписание событий детского сада</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title"><div class="card-title-icon">➕</div> Добавить мероприятие</span>
+    </div>
+    <div class="card-body">
+      <div class="form-grid three" style="margin-bottom:14px">
+        <div class="field form-span">
+          <label>Название *</label>
+          <input type="text" id="ev-title" placeholder="Название мероприятия">
+        </div>
+        <div class="field">
+          <label>Дата *</label>
+          <input type="date" id="ev-date">
+        </div>
+        <div class="field">
+          <label>Время</label>
+          <input type="time" id="ev-time">
+        </div>
+        <div class="field">
+          <label>Место</label>
+          <input type="text" id="ev-loc" placeholder="Место проведения">
+        </div>
+        <div class="field">
+          <label>Цвет метки</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="color" id="ev-color" value="#2563eb"
+              style="width:44px;height:36px;border:none;background:none;cursor:pointer;border-radius:var(--r);padding:2px">
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button onclick="document.getElementById('ev-color').value='#2563eb'" style="width:22px;height:22px;border-radius:50%;background:#2563eb;border:none;cursor:pointer"></button>
+              <button onclick="document.getElementById('ev-color').value='#10b981'" style="width:22px;height:22px;border-radius:50%;background:#10b981;border:none;cursor:pointer"></button>
+              <button onclick="document.getElementById('ev-color').value='#f59e0b'" style="width:22px;height:22px;border-radius:50%;background:#f59e0b;border:none;cursor:pointer"></button>
+              <button onclick="document.getElementById('ev-color').value='#ef4444'" style="width:22px;height:22px;border-radius:50%;background:#ef4444;border:none;cursor:pointer"></button>
+              <button onclick="document.getElementById('ev-color').value='#8b5cf6'" style="width:22px;height:22px;border-radius:50%;background:#8b5cf6;border:none;cursor:pointer"></button>
+            </div>
+          </div>
+        </div>
+        <div class="field form-span">
+          <label>Описание</label>
+          <textarea id="ev-desc" rows="2" placeholder="Описание..."></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addEvent()">📅 Добавить</button>
+      <div class="alert" id="alert-ev"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title"><div class="card-title-icon">🗓️</div> Список мероприятий</span>
+      <button class="btn btn-ghost btn-sm" onclick="loadEvents()">🔄</button>
+    </div>
+    <div class="card-body-slim" id="ev-list">
+      <div class="empty"><div class="empty-ico">⏳</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     📈 АНАЛИТИКА
+════════════════════════════════ -->
+<div class="page" id="pg-analytics">
+  <div class="pg-hd">
+    <div class="pg-hd-left">
+      <div class="pg-title">📈 Аналитика</div>
+      <div class="pg-sub">Активность за последние 30 дней</div>
+    </div>
+    <div class="pg-hd-right">
+      <button class="btn btn-ghost btn-sm" onclick="loadAnalytics()">🔄 Обновить</button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card" style="--sc-color:#2563eb;--sc-bg:rgba(37,99,235,0.12)">
+      <div class="stat-icon">🔑</div>
+      <div class="stat-val" id="an-logins">—</div>
+      <div class="stat-label">Входов за 30 дней</div>
+    </div>
+    <div class="stat-card" style="--sc-color:#10b981;--sc-bg:rgba(16,185,129,0.12)">
+      <div class="stat-icon">💬</div>
+      <div class="stat-val" id="an-msgs">—</div>
+      <div class="stat-label">Сообщений</div>
+    </div>
+    <div class="stat-card" style="--sc-color:#8b5cf6;--sc-bg:rgba(139,92,246,0.12)">
+      <div class="stat-icon">🎮</div>
+      <div class="stat-val" id="an-games">—</div>
+      <div class="stat-label">Игровых сессий</div>
+    </div>
+    <div class="stat-card" style="--sc-color:#f59e0b;--sc-bg:rgba(245,158,11,0.12)">
+      <div class="stat-icon">📄</div>
+      <div class="stat-val" id="an-files">—</div>
+      <div class="stat-label">Новых файлов</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+    <div class="chart-card" style="margin-bottom:0">
+      <div class="chart-title"><span>📊 Входы по дням</span></div>
+      <div class="chart-wrap"><canvas id="an-chart-logins"></canvas></div>
+    </div>
+    <div class="chart-card" style="margin-bottom:0">
+      <div class="chart-title"><span>🎮 Игры по типам</span></div>
+      <div class="chart-wrap"><canvas id="an-chart-games"></canvas></div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px" class="card">
+    <div class="card-head">
+      <span class="card-title"><div class="card-title-icon">🏆</div> Топ активных педагогов</span>
+    </div>
+    <div class="card-body-slim" id="an-top-users">
+      <div class="empty"><div class="empty-ico">⏳</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     🔒 БЕЗОПАСНОСТЬ
+════════════════════════════════ -->
+<div class="page" id="pg-security">
+  <div class="pg-hd">
+    <div class="pg-hd-left">
+      <div class="pg-title">🔒 Безопасность</div>
+      <div class="pg-sub">Мониторинг входов и блокировки</div>
+    </div>
+    <div class="pg-hd-right">
+      <button class="btn btn-ghost btn-sm" onclick="loadSecurity()">🔄</button>
+      <button class="btn btn-danger btn-sm" onclick="unblockAll()">🔓 Разблокировать всех</button>
+    </div>
+  </div>
+
+  <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat-card" style="--sc-color:#ef4444;--sc-bg:rgba(239,68,68,0.12)">
+      <div class="stat-icon">🚫</div>
+      <div class="stat-val" id="sec-blocks">—</div>
+      <div class="stat-label">Активных блокировок</div>
+    </div>
+    <div class="stat-card" style="--sc-color:#f59e0b;--sc-bg:rgba(245,158,11,0.12)">
+      <div class="stat-icon">⚠️</div>
+      <div class="stat-val" id="sec-fails">—</div>
+      <div class="stat-label">Неудачных входов (7д)</div>
+    </div>
+    <div class="stat-card" style="--sc-color:#10b981;--sc-bg:rgba(16,185,129,0.12)">
+      <div class="stat-icon">✅</div>
+      <div class="stat-val" id="sec-ok">—</div>
+      <div class="stat-label">Успешных входов (7д)</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-head">
+        <span class="card-title"><div class="card-title-icon">🚫</div> Заблокированные</span>
+      </div>
+      <div class="card-body-slim" id="sec-blocks-list">
+        <div class="empty"><div class="empty-ico">⏳</div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-head">
+        <span class="card-title"><div class="card-title-icon">📋</div> Последние попытки</span>
+      </div>
+      <div class="card-body-slim" id="sec-attempts-list">
+        <div class="empty"><div class="empty-ico">⏳</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- ═══ MOBILE NAV ═══ -->
+<div class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mob-btn active" data-pg="dashboard" onclick="showPg('dashboard',this)"><span>📊</span><span>Главная</span></button>
+    <button class="mob-btn" data-pg="upload" onclick="showPg('upload',this)"><span>⬆️</span><span>Загрузить</span></button>
+    <button class="mob-btn" data-pg="materials" onclick="showPg('materials',this)"><span>📁</span><span>Файлы</span></button>
+    <button class="mob-btn" data-pg="teachers" onclick="showPg('teachers',this)"><span>👩‍🏫</span><span>Педагоги</span></button>
+    <button class="mob-btn" data-pg="broadcasts" onclick="showPg('broadcasts',this)"><span>📢</span><span>Новости</span></button>
+  </div>
+</div>
+
+<!-- ═══ МОДАЛКА ДОБАВИТЬ ПЕДАГОГА ═══ -->
+<div class="modal-bg" id="modal-teacher" style="display:none" onclick="closeModal('modal-teacher',event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <span class="modal-title">➕ Добавить педагога</span>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="closeModal('modal-teacher')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid one" style="gap:12px">
+        <div class="field">
+          <label>Имя и фамилия *</label>
+          <input type="text" id="nt-name" placeholder="Например: Айгуль Сейткали">
+        </div>
+        <div class="field">
+          <label>Логин *</label>
+          <input type="text" id="nt-login" placeholder="aigyul_seitkali (лат.+цифры+_)" autocapitalize="none">
+          <div class="field-hint">Только латиница, цифры, подчёркивание (3-30 символов)</div>
+        </div>
+        <div class="field">
+          <label>Временный пароль *</label>
+          <input type="text" id="nt-pwd" placeholder="Педагог сменит при первом входе">
+          <div class="field-hint">Педагог получит запрос сменить пароль при первом входе</div>
+        </div>
+      </div>
+      <div class="alert" id="alert-teacher" style="margin-top:10px"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-teacher')">Отмена</button>
+      <button class="btn btn-primary" id="btn-add-teacher" onclick="addTeacher()">➕ Создать аккаунт</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ТОСТ ═══ -->
+<div id="toast"></div>
+
+<script>
+/* ═════════════════════════════════════════════
+   CONFIG
+═════════════════════════════════════════════ */
+const SB_URL  = 'https://ljtogliylpubvkckpwyv.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqdG9nbGl5bHB1YnZrY2twd3l2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNzEzODQsImV4cCI6MjA4ODc0NzM4NH0.91EQ_EEfi8X09Vm0jmH12_35R6tf0BwtTGoX3K5lgfc';
+const SALT    = 'pedagog_sko_2025_';
+const TG_BOT  = '8222635506:AAGalT-Y-31jQ6VWKZHBcqqmeGc27M_c1Lk';
+const TG_CHAT = '8129422076';
+const BUCKET  = 'pedagog-files';
+const SEC_NAMES = {metodichka:'📚 Методичка',presentations:'📊 Презентации',talks:'💬 Беседы'};
+const FILE_ICO  = {pdf:'📄',pptx:'📊',ppt:'📊',docx:'📝',doc:'📝',xlsx:'📈',xls:'📈'};
+
+let adminUser = null;
+let _charts   = {};
+let _selFile  = null;
+let _allTeachers = [];
+let _allUsers    = [];
+
+/* ═════════ INIT ═════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  const raw = sessionStorage.getItem('psess_user');
+  if (raw) {
+    adminUser = JSON.parse(raw);
+    document.getElementById('tb-name').textContent = adminUser.name;
+    document.getElementById('tb-av').textContent   = (adminUser.name||'A')[0].toUpperCase();
+  }
+  loadDashboard();
+});
+
+/* ═════════ SUPABASE ═════════ */
+async function sb(path, opts={}) {
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), 12000);
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+      headers:{
+        'apikey':SB_ANON,'Authorization':'Bearer '+SB_ANON,
+        'Content-Type':'application/json',
+        'Prefer': opts.prefer || (opts.method==='POST'?'return=representation':'return=minimal'),
+        ...(opts.headers||{})
+      },
+      signal: ctrl.signal, ...opts
+    });
+    clearTimeout(tid);
+    if (opts.method==='DELETE'||(opts.method==='PATCH'&&!opts.prefer)) return true;
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.message||data.error||r.statusText);
+    return data;
+  } catch(e) { clearTimeout(tid); throw e; }
+}
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function tg(text){ fetch(`https://api.telegram.org/bot${TG_BOT}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:TG_CHAT,text,parse_mode:'HTML'})}).catch(()=>{}); }
+
+/* ═════════ UI HELPERS ═════════ */
+let _toastTimer;
+function toast(msg, type='ok', dur=3500) {
+  clearTimeout(_toastTimer);
+  const el = document.getElementById('toast');
+  el.textContent=msg; el.className=type; el.style.display='block';
+  _toastTimer = setTimeout(()=>el.style.display='none', dur);
+}
+function showAlert(id, type, msg) {
+  const el=document.getElementById(id);
+  el.className='alert '+type; el.textContent=msg; el.style.display='block';
+}
+function hideAlert(id){ const el=document.getElementById(id); if(el) el.style.display='none'; }
+function setLoad(id, on) {
+  const btn=document.getElementById(id);
+  if (!btn) return;
+  btn.disabled=on;
+  btn.classList.toggle('btn-loading', on);
+}
+
+/* ═════════ НАВИГАЦИЯ ═════════ */
+function showPg(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item,.mob-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+name).classList.add('active');
+  document.querySelectorAll(`[data-pg="${name}"]`).forEach(b=>b.classList.add('active'));
+  // Загружаем данные
+  const loaders = {
+    dashboard:  loadDashboard,
+    materials:  loadMaterials,
+    teachers:   loadTeachers,
+    users:      loadUsers,
+    broadcasts: loadBroadcasts,
+    events:     loadEvents,
+    analytics:  loadAnalytics,
+    security:   loadSecurity,
+  };
+  if (loaders[name]) loaders[name]();
+}
+function doLogout() {
+  localStorage.removeItem('psess_token');
+  sessionStorage.removeItem('psess_token');
+  sessionStorage.removeItem('psess_user');
+  window.location.replace('auth.html');
+}
+function openAddTeacherModal() {
+  document.getElementById('nt-name').value  = '';
+  document.getElementById('nt-login').value = '';
+  document.getElementById('nt-pwd').value   = '';
+  hideAlert('alert-teacher');
+  document.getElementById('modal-teacher').style.display = 'flex';
+}
+function closeModal(id, e) {
+  if (!e || e.target===document.getElementById(id))
+    document.getElementById(id).style.display='none';
+}
+
+/* ═════════════════════════════════════════════
+   📊 ДАШБОРД
+═════════════════════════════════════════════ */
+async function loadDashboard() {
+  try {
+    const [users, mats, sessions, games, msgs] = await Promise.all([
+      sb('pedagog_users?select=id,name,role,created_at&order=created_at.desc&limit=100'),
+      sb('pedagog_materials?select=id,title,section,created_at&order=created_at.desc&limit=5'),
+      sb('user_sessions?select=id&expires_at=gte.'+encodeURIComponent(new Date().toISOString())),
+      sb('game_records?select=id'),
+      sb('chat_messages_v2?select=id&created_at=gte.'+encodeURIComponent(new Date(Date.now()-30*864e5).toISOString())),
+    ]);
+
+    const teachers = (users||[]).filter(u=>u.role==='teacher');
+    document.getElementById('st-users').textContent    = (users||[]).length;
+    document.getElementById('st-teachers').textContent = teachers.length;
+    document.getElementById('st-materials').textContent= (mats||[]).length;
+    document.getElementById('st-sessions').textContent = (sessions||[]).length;
+    document.getElementById('st-games').textContent    = (games||[]).length;
+    document.getElementById('st-msgs').textContent     = (msgs||[]).length;
+
+    // Счётчики в sidebar
+    document.getElementById('sb-cnt-users').textContent    = (users||[]).length;
+    document.getElementById('sb-cnt-teachers').textContent = teachers.length;
+
+    // Новые пользователи
+    const newUsersEl = document.getElementById('dash-new-users');
+    const recent = (users||[]).slice(0,6);
+    if (!recent.length) { newUsersEl.innerHTML='<div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">Нет пользователей</div></div>'; }
+    else newUsersEl.innerHTML = recent.map(u=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border2)">
+        <div class="av av-sm">${(u.name||'?')[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(u.name)}</div>
+          <div style="font-size:11px;color:var(--text3)">${new Date(u.created_at).toLocaleDateString('ru-RU')}</div>
+        </div>
+        <span class="badge ${u.role==='admin'?'badge-red':'badge-blue'}">${u.role}</span>
+      </div>`).join('');
+
+    // Последние материалы
+    const newMatsEl = document.getElementById('dash-new-mats');
+    const allMats = await sb('pedagog_materials?select=id,title,section,file_type,created_at&order=created_at.desc&limit=5');
+    document.getElementById('sb-cnt-materials').textContent = (allMats||[]).length;
+    if (!(allMats||[]).length) { newMatsEl.innerHTML='<div class="empty"><div class="empty-ico">📁</div><div class="empty-txt">Файлов нет</div></div>'; }
+    else newMatsEl.innerHTML = (allMats||[]).map(m=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border2)">
+        <div style="font-size:22px">${FILE_ICO[m.file_type]||'📎'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.title)}</div>
+          <div style="font-size:11px;color:var(--text3)">${SEC_NAMES[m.section]||m.section}</div>
+        </div>
+      </div>`).join('');
+
+    // График входов
+    await drawLoginChart();
+  } catch(e) { toast('Ошибка дашборда: '+e.message,'err'); }
+}
+
+async function drawLoginChart() {
+  try {
+    const sessions = await sb('login_sessions?select=created_at&created_at=gte.'+encodeURIComponent(new Date(Date.now()-14*864e5).toISOString()));
+    const days={};
+    for(let i=13;i>=0;i--){
+      const d=new Date(Date.now()-i*864e5).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'});
+      days[d]=0;
+    }
+    (sessions||[]).forEach(s=>{
+      const d=new Date(s.created_at).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'});
+      if(d in days) days[d]++;
+    });
+    drawChart('chart-logins','line',Object.keys(days),Object.values(days),'Входов','#2563eb');
+    document.getElementById('dash-chart-label').textContent='Всего: '+(sessions||[]).length;
+  } catch(e) {}
+}
+
+/* ═════════════════════════════════════════════
+   ⬆️ ЗАГРУЗКА ФАЙЛА
+═════════════════════════════════════════════ */
+function onDragOver(e){ e.preventDefault(); document.getElementById('upload-zone').classList.add('over'); }
+function onDragLeave(){ document.getElementById('upload-zone').classList.remove('over'); }
+function onDrop(e){ e.preventDefault(); onDragLeave(); if(e.dataTransfer.files[0]) selectFile(e.dataTransfer.files[0]); }
+function onFileSelect(inp){ if(inp.files[0]) selectFile(inp.files[0]); }
+
+function selectFile(file) {
+  _selFile=file;
+  const ext=file.name.split('.').pop().toLowerCase();
+  document.getElementById('upload-zone-wrap').style.display='none';
+  document.getElementById('file-chosen-wrap').style.display='block';
+  document.getElementById('upload-form').style.display='block';
+  document.getElementById('fc-icon').textContent=FILE_ICO[ext]||'📎';
+  document.getElementById('fc-name').textContent=file.name;
+  document.getElementById('fc-size').textContent=(file.size/1024/1024).toFixed(2)+' MB';
+  const titleEl=document.getElementById('u-title');
+  if (!titleEl.value) titleEl.value=file.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
+  hideAlert('alert-upload');
+}
+
+function resetUpload() {
+  _selFile=null;
+  document.getElementById('upload-zone-wrap').style.display='block';
+  document.getElementById('file-chosen-wrap').style.display='none';
+  document.getElementById('upload-form').style.display='none';
+  document.getElementById('u-title').value='';
+  document.getElementById('u-desc').value='';
+  document.getElementById('u-file').value='';
+  document.getElementById('upload-prog').style.display='none';
+  document.getElementById('prog-fill').style.width='0%';
+  hideAlert('alert-upload');
+  const btn=document.getElementById('btn-upload');
+  if(btn){btn.disabled=false;btn.textContent='🚀 Опубликовать на портале';}
+}
+
+async function doUpload() {
+  const title  =document.getElementById('u-title').value.trim();
+  const section=document.getElementById('u-section').value;
+  const desc   =document.getElementById('u-desc').value.trim();
+  if (!title)    { showAlert('alert-upload','err','❌ Введите название'); return; }
+  if (!_selFile) { showAlert('alert-upload','err','❌ Выберите файл'); return; }
+  if (_selFile.size>50*1024*1024){ showAlert('alert-upload','err','❌ Файл больше 50MB'); return; }
+
+  const btn=document.getElementById('btn-upload');
+  btn.disabled=true; btn.textContent='⏳ Загружаю...';
+  const prog=document.getElementById('upload-prog');
+  const fill=document.getElementById('prog-fill');
+  const txt =document.getElementById('prog-text');
+  prog.style.display='block'; fill.style.width='15%'; txt.textContent='Загрузка в хранилище...';
+  hideAlert('alert-upload');
+
+  try {
+    const ext=_selFile.name.split('.').pop().toLowerCase();
+    const fileName=Date.now()+'_'+_selFile.name.replace(/\s+/g,'_');
+    const storRes=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${fileName}`,{
+      method:'POST',
+      headers:{'apikey':SB_ANON,'Authorization':'Bearer '+SB_ANON,
+        'Content-Type':_selFile.type||'application/octet-stream','x-upsert':'true'},
+      body:_selFile
+    });
+    fill.style.width='65%'; txt.textContent='Сохранение в базу данных...';
+    if (!storRes.ok){
+      const er=await storRes.json().catch(()=>({}));
+      throw new Error(er.message||'Ошибка Storage');
+    }
+    const fileUrl=`${SB_URL}/storage/v1/object/public/${BUCKET}/${fileName}`;
+    fill.style.width='85%';
+    await sb('pedagog_materials',{method:'POST',body:JSON.stringify({
+      title,description:desc||null,section,
+      file_url:fileUrl,file_name:_selFile.name,
+      file_type:ext,uploaded_by:adminUser?.name||'admin'
+    })});
+    fill.style.width='100%'; txt.textContent='✅ Готово!';
+    showAlert('alert-upload','ok',`✅ Файл "${title}" опубликован в разделе ${SEC_NAMES[section]}!`);
+    tg(`📁 Новый материал: <b>${title}</b>\nРаздел: ${SEC_NAMES[section]||section}`);
+    toast('✅ Опубликовано!');
+    setTimeout(()=>{ resetUpload(); showPg('materials'); },2500);
+  } catch(e) {
+    showAlert('alert-upload','err','❌ '+e.message);
+    prog.style.display='none';
+    btn.disabled=false; btn.textContent='🚀 Опубликовать на портале';
+  }
+}
+
+/* ═════════════════════════════════════════════
+   📁 МАТЕРИАЛЫ
+═════════════════════════════════════════════ */
+async function loadMaterials() {
+  const el=document.getElementById('mat-list');
+  const filter=document.getElementById('mat-filter-sel').value;
+  el.innerHTML='<div class="empty"><div class="empty-ico">⏳</div></div>';
+  try {
+    const q=filter
+      ?`pedagog_materials?section=eq.${filter}&select=*&order=created_at.desc`
+      :'pedagog_materials?select=*&order=created_at.desc';
+    const mats=await sb(q);
+    document.getElementById('sb-cnt-materials').textContent=(mats||[]).length;
+    if (!(mats||[]).length) { el.innerHTML='<div class="empty"><div class="empty-ico">📁</div><div class="empty-txt">Материалов нет</div></div>'; return; }
+    el.innerHTML=mats.map(m=>`
+      <div class="mat-row" id="mat-${m.id}">
+        <div class="mat-icon">${FILE_ICO[m.file_type]||'📎'}</div>
+        <div class="mat-info">
+          <div class="mat-name">${esc(m.title)}</div>
+          <div class="mat-meta">
+            <span class="mat-sec">${SEC_NAMES[m.section]||m.section}</span>
+            ${m.description?`<span style="font-size:12px;color:var(--text2)">${esc(m.description).substring(0,60)}</span>`:''}
+            <span class="mat-date">${new Date(m.created_at).toLocaleDateString('ru-RU')}</span>
+          </div>
+        </div>
+        <div class="mat-actions">
+          ${m.file_url?`<a href="${esc(m.file_url)}" target="_blank" class="btn btn-ghost btn-sm btn-icon" title="Открыть">👁</a>`:''}
+          ${m.file_url?`<a href="${esc(m.file_url)}" download class="btn btn-ghost btn-sm btn-icon" title="Скачать">⬇️</a>`:''}
+          <button class="btn btn-danger btn-sm btn-icon" title="Удалить" onclick="deleteMat('${m.id}','${esc(m.title)}')">🗑</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML=`<div class="empty"><div class="empty-ico">❌</div><div class="empty-txt">${esc(e.message)}</div></div>`; }
+}
+
+async function deleteMat(id, name) {
+  if (!confirm(`Удалить файл "${name}"?`)) return;
+  try {
+    await sb(`pedagog_materials?id=eq.${id}`,{method:'DELETE'});
+    document.getElementById('mat-'+id)?.remove();
+    toast('✅ Файл удалён');
+  } catch(e) { toast('Ошибка: '+e.message,'err'); }
+}
+
+/* ═════════════════════════════════════════════
+   👩‍🏫 ПЕДАГОГИ
+═════════════════════════════════════════════ */
+async function loadTeachers() {
+  const body=document.getElementById('teachers-body');
+  body.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-ico">⏳</div></div></td></tr>';
+  try {
+    const rows=await sb('pedagog_users?role=eq.teacher&select=id,login,name,must_change_password,created_at&order=name.asc');
+    _allTeachers=rows||[];
+    document.getElementById('sb-cnt-teachers').textContent=_allTeachers.length;
+    renderTeachers(_allTeachers);
+  } catch(e) { body.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-ico">❌</div><div class="empty-txt">${esc(e.message)}</div></div></td></tr>`; }
+}
+
+function renderTeachers(data) {
+  const body=document.getElementById('teachers-body');
+  if (!data.length) { body.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-ico">👩‍🏫</div><div class="empty-txt">Педагогов нет</div></div></td></tr>'; return; }
+  body.innerHTML=data.map(t=>`
+    <tr id="tr-${t.id}">
+      <td><div class="av av-sm">${(t.name||'?')[0].toUpperCase()}</div></td>
+      <td style="font-weight:700">${esc(t.name)}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text2)">${esc(t.login)}</td>
+      <td>${t.must_change_password
+        ?'<span class="badge badge-yellow">⏳ Ожидает смены пароля</span>'
+        :'<span class="badge badge-green">✅ Активен</span>'}</td>
+      <td style="color:var(--text3);font-size:12px">${new Date(t.created_at).toLocaleDateString('ru-RU')}</td>
+      <td style="text-align:right">
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn btn-ghost btn-sm btn-icon" title="Сбросить пароль" onclick="resetTeacherPwd('${t.id}','${esc(t.name)}')">🔑</button>
+          <button class="btn btn-danger btn-sm btn-icon" title="Заблокировать" onclick="blockTeacher('${t.id}','${esc(t.login)}','${esc(t.name)}')">🚫</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function filterTeachers(q) {
+  q=q.toLowerCase().trim();
+  renderTeachers(q?_allTeachers.filter(t=>(t.name||'').toLowerCase().includes(q)||(t.login||'').toLowerCase().includes(q)):_allTeachers);
+}
+
+async function addTeacher() {
+  const name =document.getElementById('nt-name').value.trim();
+  const login=document.getElementById('nt-login').value.trim().toLowerCase();
+  const pwd  =document.getElementById('nt-pwd').value.trim();
+  if (!name||!login||!pwd){ showAlert('alert-teacher','err','❌ Заполните все поля'); return; }
+  if (!/^[a-z0-9_]{3,30}$/.test(login)){ showAlert('alert-teacher','err','❌ Логин: только a-z, 0-9, _ (3-30 символов)'); return; }
+  if (pwd.length<4){ showAlert('alert-teacher','err','❌ Пароль слишком короткий'); return; }
+
+  setLoad('btn-add-teacher',true);
+  try {
+    const ex=await sb(`pedagog_users?login=eq.${encodeURIComponent(login)}&select=id&limit=1`);
+    if (ex?.length){ showAlert('alert-teacher','err','❌ Логин уже занят'); setLoad('btn-add-teacher',false); return; }
+    const h=await sha256(SALT+pwd);
+    await sb('pedagog_users',{method:'POST',body:JSON.stringify({login,name,password_hash:h,role:'teacher',must_change_password:true})});
+    closeModal('modal-teacher');
+    toast(`✅ Педагог "${name}" создан! Логин: ${login}`,'ok',5000);
+    tg(`➕ Новый педагог: <b>${name}</b> (${login})`);
+    loadTeachers();
+  } catch(e) { showAlert('alert-teacher','err','Ошибка: '+e.message); }
+  setLoad('btn-add-teacher',false);
+}
+
+async function resetTeacherPwd(id, name) {
+  const pwd=prompt(`Новый временный пароль для "${name}":`);
+  if (!pwd||pwd.length<4){ toast('Пароль слишком короткий','err'); return; }
+  try {
+    const h=await sha256(SALT+pwd);
+    await sb(`pedagog_users?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({password_hash:h,must_change_password:true})});
+    toast(`✅ Пароль для "${name}" сброшен`);
+    tg(`🔑 Сброс пароля: <b>${name}</b>`);
+    loadTeachers();
+  } catch(e) { toast('Ошибка: '+e.message,'err'); }
+}
+
+async function blockTeacher(id, login, name) {
+  if (!confirm(`Заблокировать педагога "${name}"?\nВсе его сессии будут удалены.`)) return;
+  try {
+    await sb(`user_sessions?user_id=eq.${id}`,{method:'DELETE'});
+    toast(`✅ Педагог "${name}" заблокирован — все сессии удалены`,'info',5000);
+    tg(`🚫 Блокировка: <b>${name}</b> (${login})`);
+  } catch(e) { toast('Ошибка: '+e.message,'err'); }
+}
+
+/* ═════════════════════════════════════════════
+   👥 ПОЛЬЗОВАТЕЛИ (только просмотр — без удаления!)
+═════════════════════════════════════════════ */
+async function loadUsers() {
+  const body=document.getElementById('users-body');
+  body.innerHTML='<tr><td colspan="5"><div class="empty"><div class="empty-ico">⏳</div></div></td></tr>';
+  try {
+    const rows=await sb('pedagog_users?select=id,login,name,role,created_at&order=created_at.desc');
+    _allUsers=rows||[];
+    document.getElementById('sb-cnt-users').textContent=_allUsers.length;
+    renderUsers(_allUsers);
+  } catch(e) { body.innerHTML=`<tr><td colspan="5"><div class="empty"><div class="empty-ico">❌</div><div class="empty-txt">${esc(e.message)}</div></div></td></tr>`; }
+}
+
+function renderUsers(data) {
+  const body=document.getElementById('users-body');
+  if (!data.length) { body.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">Нет пользователей</div></div></td></tr>'; return; }
+  body.innerHTML=data.map(u=>`
+    <tr id="urow-${u.id}">
+      <td><div class="av av-sm">${(u.name||'?')[0].toUpperCase()}</div></td>
+      <td style="font-weight:700">${esc(u.name)}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text2)">${esc(u.login)}</td>
+      <td><span class="badge ${u.role==='admin'?'badge-red':u.role==='teacher'?'badge-blue':'badge-gray'}">${esc(u.role)}</span></td>
+      <td style="color:var(--text3);font-size:12px">${new Date(u.created_at).toLocaleDateString('ru-RU')}</td>
+      <td style="text-align:right">${u.role!=='admin'?`<button class="btn btn-danger btn-sm btn-icon" title="Удалить" onclick="deleteUser('${u.id}','${esc(u.name)}')">🗑</button>`:''}</td>
+    </tr>`).join('');
+}
+
+async function deleteUser(id, name) {
+  if (!confirm(`Удалить пользователя "${name}"?\nЭто действие нельзя отменить.`)) return;
+  try {
+    await sb(`user_sessions?user_id=eq.${id}`,{method:'DELETE'});
+    await sb(`pedagog_users?id=eq.${id}`,{method:'DELETE'});
+    document.getElementById('urow-'+id)?.remove();
+    toast(`✅ Пользователь "${name}" удалён`);
+    tg(`🗑 Удалён пользователь: <b>${name}</b>`);
+    // Обновляем счётчик
+    _allUsers = _allUsers.filter(u=>u.id!==id);
+    document.getElementById('sb-cnt-users').textContent = _allUsers.length;
+  } catch(e) { toast('Ошибка: '+e.message,'err'); }
+}
+
+function filterUsers(q) {
+  q=q.toLowerCase().trim();
+  renderUsers(q?_allUsers.filter(u=>(u.name||'').toLowerCase().includes(q)||(u.login||'').toLowerCase().includes(q)):_allUsers);
+}
+
+/* ═════════════════════════════════════════════
+   📢 ОБЪЯВЛЕНИЯ
+═════════════════════════════════════════════ */
+async function sendBroadcast() {
+  const title=document.getElementById('bc-title').value.trim();
+  const msg  =document.getElementById('bc-text').value.trim();
+  if (!title||!msg){ showAlert('alert-bc','err','❌ Заполните заголовок и текст'); return; }
+  try {
+    await sb('portal_broadcasts',{method:'POST',body:JSON.stringify({title,message:msg,sent_by:adminUser?.name||'admin'})});
+    document.getElementById('bc-title').value='';
+    document.getElementById('bc-text').value='';
+    toast('✅ Объявление опубликовано!');
+    tg(`📢 Новое объявление: <b>${title}</b>\n${msg}`);
+    loadBroadcasts();
+    hideAlert('alert-bc');
+  } catch(e) { showAlert('alert-bc','err','Ошибка: '+e.message); }
+}
+
+async function loadBroadcasts() {
+  const el=document.getElementById('bc-list');
+  el.innerHTML='<div class="empty"><div class="empty-ico">⏳</div></div>';
+  try {
+    const rows=await sb('portal_broadcasts?select=*&order=sent_at.desc&limit=20');
+    if (!(rows||[]).length){ el.innerHTML='<div class="empty"><div class="empty-ico">📢</div><div class="empty-txt">Объявлений нет</div></div>'; return; }
+    el.innerHTML=rows.map(b=>{
+      const d=new Date(b.sent_at).toLocaleString('ru-RU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      return `<div style="padding:14px 20px;border-bottom:1px solid var(--border2)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <span style="font-weight:800;font-size:14px;flex:1">${esc(b.title)}</span>
+          <span style="font-size:11px;color:var(--text3)">${d}</span>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteBroadcast('${b.id}')">🗑</button>
+        </div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5">${esc(b.message)}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Автор: ${esc(b.sent_by)}</div>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML=`<div class="empty"><div class="empty-ico">❌</div><div class="empty-txt">${esc(e.message)}</div></div>`; }
+}
+
+async function deleteBroadcast(id) {
+  if (!confirm('Удалить объявление?')) return;
+  try { await sb(`portal_broadcasts?id=eq.${id}`,{method:'DELETE'}); toast('✅ Удалено'); loadBroadcasts(); }
+  catch(e) { toast('Ошибка: '+e.message,'err'); }
+}
+
+/* ═════════════════════════════════════════════
+   📅 МЕРОПРИЯТИЯ
+═════════════════════════════════════════════ */
+async function addEvent() {
+  const title=document.getElementById('ev-title').value.trim();
+  const date =document.getElementById('ev-date').value;
+  const time =document.getElementById('ev-time').value;
+  const loc  =document.getElementById('ev-loc').value.trim();
+  const desc =document.getElementById('ev-desc').value.trim();
+  const color=document.getElementById('ev-color').value;
+  if (!title||!date){ showAlert('alert-ev','err','❌ Укажите название и дату'); return; }
+  try {
+    await sb('portal_events',{method:'POST',body:JSON.stringify({
+      title,event_date:date,event_time:time||null,
+      location:loc||null,description:desc||null,
+      color,created_by:adminUser?.name||'admin'
+    })});
+    ['ev-title','ev-date','ev-time','ev-loc','ev-desc'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    showAlert('alert-ev','ok','✅ Мероприятие добавлено!');
+    tg(`📅 Новое мероприятие: <b>${title}</b> — ${date}`);
+    loadEvents();
+  } catch(e) { showAlert('alert-ev','err','Ошибка: '+e.message); }
+}
+
+async function loadEvents() {
+  const el=document.getElementById('ev-list');
+  el.innerHTML='<div class="empty"><div class="empty-ico">⏳</div></div>';
+  try {
+    const rows=await sb('portal_events?select=*&order=event_date.asc&limit=50');
+    const MONTHS=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+    if (!(rows||[]).length){ el.innerHTML='<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">Мероприятий нет</div></div>'; return; }
+    const now=new Date();
+    el.innerHTML=rows.map(ev=>{
+      const d=new Date(ev.event_date+'T00:00:00');
+      const past=d<now;
+      return `<div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border2);${past?'opacity:.5':''}">
+        <div style="min-width:42px;height:42px;border-radius:10px;background:${ev.color||'#2563eb'};
+          display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;flex-shrink:0">
+          <span style="font-size:16px;font-weight:900;line-height:1">${d.getDate()}</span>
+          <span style="font-size:9px">${MONTHS[d.getMonth()]}</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:14px">${esc(ev.title)}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">
+            ${ev.event_time?'🕐 '+ev.event_time:''}
+            ${ev.location?' · 📍'+esc(ev.location):''}
+          </div>
+        </div>
+        ${past?'<span class="badge badge-gray">Прошло</span>':'<span class="badge badge-green">Предстоит</span>'}
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteEvent('${ev.id}')">🗑</button>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML=`<div class="empty"><div class="empty-ico">❌</div><div class="empty-txt">${esc(e.message)}</div></div>`; }
+}
+
+async function deleteEvent(id) {
+  if (!confirm('Удалить мероприятие?')) return;
+  try { await sb(`portal_events?id=eq.${id}`,{method:'DELETE'}); toast('✅ Удалено'); loadEvents(); }
+  catch(e) { toast('Ошибка: '+e.message,'err'); }
+}
+
+/* ═════════════════════════════════════════════
+   📈 АНАЛИТИКА
+═════════════════════════════════════════════ */
+async function loadAnalytics() {
+  const m30=new Date(Date.now()-30*864e5).toISOString();
+  try {
+    const [logins,msgs,games,files,gameRecords,topUsers]=await Promise.all([
+      sb('login_sessions?select=created_at,user_name&created_at=gte.'+encodeURIComponent(m30)),
+      sb('chat_messages_v2?select=id&created_at=gte.'+encodeURIComponent(m30)),
+      sb('game_records?select=game_type,user_name'),
+      sb('pedagog_materials?select=id&created_at=gte.'+encodeURIComponent(m30)),
+      sb('game_records?select=game_type,score'),
+      sb('login_sessions?select=user_name&created_at=gte.'+encodeURIComponent(m30)),
+    ]);
+
+    document.getElementById('an-logins').textContent=(logins||[]).length;
+    document.getElementById('an-msgs').textContent  =(msgs||[]).length;
+    document.getElementById('an-games').textContent =(games||[]).length;
+    document.getElementById('an-files').textContent =(files||[]).length;
+
+    // График входов
+    const days={};
+    for(let i=29;i>=0;i--){
+      const d=new Date(Date.now()-i*864e5).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'});
+      days[d]=0;
+    }
+    (logins||[]).forEach(s=>{
+      const d=new Date(s.created_at).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'});
+      if(d in days) days[d]++;
+    });
+    // Показываем каждый 3й день
+    const labels=Object.keys(days).filter((_,i)=>i%3===0||i===Object.keys(days).length-1);
+    const vals  =Object.values(days).filter((_,i)=>i%3===0||i===Object.values(days).length-1);
+    drawChart('an-chart-logins','line',labels,vals,'Входов','#2563eb');
+
+    // Игры по типам
+    const gameTypes={};
+    (gameRecords||[]).forEach(g=>{ gameTypes[g.game_type||'other']=(gameTypes[g.game_type||'other']||0)+1; });
+    const GAME_N={puzzle:'Пазл',memory:'Память',quiz:'Викторина',fifteen:'Пятнашки',sort:'Сортировка',count:'Счёт',match:'Цвета'};
+    drawDoughnut('an-chart-games',
+      Object.keys(gameTypes).map(k=>GAME_N[k]||k),
+      Object.values(gameTypes)
+    );
+
+    // Топ пользователей
+    const ua={};
+    (topUsers||[]).forEach(s=>{ ua[s.user_name]=(ua[s.user_name]||0)+1; });
+    const top=Object.entries(ua).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const topEl=document.getElementById('an-top-users');
+    topEl.innerHTML=top.length?top.map(([name,cnt],i)=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border2)">
+        <div class="av av-sm" style="background:${['linear-gradient(135deg,#f59e0b,#fbbf24)','linear-gradient(135deg,#94a3b8,#cbd5e1)','linear-gradient(135deg,#c97c3a,#e0974e)'][i]||'linear-gradient(135deg,var(--accent),var(--purple))'}">
+          ${['🥇','🥈','🥉'][i]||i+1}
+        </div>
+        <div style="flex:1;font-weight:700;font-size:14px">${esc(name)}</div>
+        <div style="font-weight:800;color:var(--accent)">${cnt} входов</div>
+      </div>`).join('')
+      :'<div class="empty"><div class="empty-ico">📊</div><div class="empty-txt">Нет данных</div></div>';
+  } catch(e) { toast('Ошибка аналитики: '+e.message,'err'); }
+}
+
+/* ═════════════════════════════════════════════
+   🔒 БЕЗОПАСНОСТЬ
+═════════════════════════════════════════════ */
+async function loadSecurity() {
+  try {
+    const d7=new Date(Date.now()-7*864e5).toISOString();
+    const [blocks,fails,ok,attempts]=await Promise.all([
+      sb('login_blocks?select=*&blocked_until=gte.'+encodeURIComponent(new Date().toISOString())),
+      sb('login_attempts?select=id&success=eq.false&created_at=gte.'+encodeURIComponent(d7)),
+      sb('login_attempts?select=id&success=eq.true&created_at=gte.'+encodeURIComponent(d7)),
+      sb('login_attempts?select=*&order=created_at.desc&limit=20'),
+    ]);
+
+    document.getElementById('sec-blocks').textContent=(blocks||[]).length;
+    document.getElementById('sec-fails').textContent =(fails||[]).length;
+    document.getElementById('sec-ok').textContent    =(ok||[]).length;
+    document.getElementById('sb-cnt-blocks').style.display=(blocks||[]).length?'flex':'none';
+
+    // Блокировки
+    const blEl=document.getElementById('sec-blocks-list');
+    if (!(blocks||[]).length) { blEl.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">Блокировок нет</div></div>'; }
+    else blEl.innerHTML=blocks.map(b=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border2)">
+        <span class="badge badge-red">🚫</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:13px">${esc(b.login)}</div>
+          <div style="font-size:11px;color:var(--text3)">До: ${new Date(b.blocked_until).toLocaleString('ru-RU')}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="unblockUser('${esc(b.login)}')">🔓</button>
+      </div>`).join('');
+
+    // Попытки
+    const atEl=document.getElementById('sec-attempts-list');
+    if (!(attempts||[]).length) { atEl.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">Нет попыток</div></div>'; }
+    else atEl.innerHTML=attempts.map(a=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border2)">
+        <span class="badge ${a.success?'badge-green':'badge-red'}">${a.success?'✅':'❌'}</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:13px">${esc(a.login)}</div>
+          <div style="font-size:11px;color:var(--text3)">${esc(a.stage||'')} · ${new Date(a.created_at).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>`).join('');
+  } catch(e) { toast('Ошибка: '+e.message,'err'); }
+}
+
+async function unblockUser(login) {
+  try {
+    await sb(`login_blocks?login=eq.${encodeURIComponent(login)}`,{method:'DELETE'});
+    toast(`✅ ${login} разблокирован`);
+    loadSecurity();
+  } catch(e) { toast('Ошибка: '+e.message,'err'); }
+}
+
+async function unblockAll() {
+  if (!confirm('Разблокировать всех пользователей?')) return;
+  try {
+    await sb('login_blocks',{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+    toast('✅ Все пользователи разблокированы');
+    loadSecurity();
+  } catch(e) { toast('Ошибка: '+e.message,'err'); }
+}
+
+/* ═════════════════════════════════════════════
+   📊 ГРАФИКИ
+═════════════════════════════════════════════ */
+function drawChart(id, type, labels, data, label, color='#2563eb') {
+  const ctx=document.getElementById(id)?.getContext('2d');
+  if (!ctx) return;
+  if (_charts[id]) _charts[id].destroy();
+  const isDark = true;
+  const textColor = 'rgba(180,200,255,0.5)';
+  const gridColor = 'rgba(255,255,255,0.05)';
+  _charts[id]=new Chart(ctx,{
+    type,
+    data:{
+      labels,
+      datasets:[{
+        label,data,
+        borderColor:color,
+        backgroundColor:type==='line'?color+'26':color,
+        tension:.4,fill:true,pointRadius:3,
+        borderWidth:2,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}},
+        y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true}
+      }
+    }
+  });
+}
+
+function drawDoughnut(id, labels, data) {
+  const ctx=document.getElementById(id)?.getContext('2d');
+  if (!ctx) return;
+  if (_charts[id]) _charts[id].destroy();
+  _charts[id]=new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels,
+      datasets:[{data,
+        backgroundColor:['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899'],
+        borderWidth:2,borderColor:'#111d35'
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'rgba(180,200,255,0.5)',font:{size:10},boxWidth:10}}}
+    }
+  });
+}
+</script>
+</body>
+</html>

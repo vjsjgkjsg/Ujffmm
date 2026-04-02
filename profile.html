@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<base href="./">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Мой профиль — Навигатор</title>
+<script>
+(function(){
+  const token = localStorage.getItem('psess_token') || sessionStorage.getItem('psess_token');
+  if (!token) { window.location.href='./auth.html'; }
+})();
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b1120;--bg2:#111827;--bg3:#1a2235;
+  --card:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
+  --text:#e8edf8;--text2:rgba(255,255,255,0.5);--text3:rgba(255,255,255,0.25);
+  --accent:#1976d2;--accent2:rgba(25,118,210,0.15);--radius:14px;
+}
+[data-theme="light"]{
+  --bg:#f0f4f8;--bg2:#e4eaf2;--bg3:#dae2ed;
+  --card:#ffffff;--border:rgba(0,0,0,0.09);
+  --text:#1a2234;--text2:#4a5f82;--text3:#8a9ab8;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{height:54px;background:var(--card);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:12px;position:sticky;top:0;z-index:10;
+  backdrop-filter:blur(10px)}
+.tb-back{background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;
+  padding:6px 10px;border-radius:8px;transition:all .2s;font-family:inherit;font-weight:700}
+.tb-back:hover{background:var(--bg3);color:var(--text)}
+.tb-title{font-weight:800;font-size:16px;flex:1}
+.btn-theme{background:none;border:1px solid var(--border);border-radius:50%;width:36px;height:36px;
+  cursor:pointer;font-size:16px;transition:all .2s}
+.btn-theme:hover{background:var(--bg3)}
+
+/* ── КОНТЕНТ ── */
+.content{max-width:520px;margin:0 auto;padding:24px 16px}
+
+/* ── АВАТАР БЛОК ── */
+.avatar-block{text-align:center;margin-bottom:28px}
+.avatar-wrap{position:relative;display:inline-block;margin-bottom:12px}
+.avatar-big{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#1976d2,#7c3aed);
+  display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:800;color:#fff;
+  margin:0 auto;border:3px solid var(--border);position:relative;overflow:hidden;cursor:pointer;transition:all .2s}
+.avatar-big:hover .av-overlay{opacity:1}
+.avatar-big img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.av-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;
+  justify-content:center;font-size:24px;opacity:0;transition:opacity .2s;border-radius:50%}
+.avatar-input{display:none}
+.user-name-big{font-size:20px;font-weight:800;color:var(--text)}
+.user-role{font-size:13px;color:var(--text2);margin-top:4px}
+
+/* ── КАРТОЧКА ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* ── ПОЛЯ ── */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.field input{width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);
+  border-radius:10px;padding:11px 14px;color:var(--text);font-family:inherit;font-size:14px;
+  outline:none;transition:all .2s}
+[data-theme="light"] .field input{background:var(--bg2)}
+.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent2)}
+.field input::placeholder{color:var(--text3)}
+.input-wrap{position:relative}
+.input-wrap input{padding-right:44px}
+.eye-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;color:var(--text3);font-size:17px;padding:4px}
+.eye-btn:hover{color:var(--text2)}
+
+/* ── ИНДИКАТОР ПАРОЛЯ ── */
+.pwd-bars{display:flex;gap:4px;margin-top:6px}
+.pwd-bar{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,0.08);transition:background .3s}
+.pwd-bar.weak{background:#ef4444}
+.pwd-bar.medium{background:#f59e0b}
+.pwd-bar.strong{background:#22c55e}
+
+/* ── КНОПКИ ── */
+.btn{padding:11px 20px;border-radius:10px;border:none;cursor:pointer;font-family:inherit;
+  font-size:14px;font-weight:700;transition:all .2s;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(25,118,210,0.3)}
+.btn-primary:hover{background:#1565c0;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-danger{background:rgba(239,68,68,0.1);color:#fca5a5;border:1px solid rgba(239,68,68,0.2)}
+.btn-danger:hover{background:rgba(239,68,68,0.15)}
+
+/* ── АЛЕРТ ── */
+.alert{padding:11px 14px;border-radius:10px;font-size:13px;font-weight:600;
+  margin-top:12px;display:none;animation:fadeIn .2s ease}
+.alert-ok{background:rgba(34,197,94,0.1);color:#86efac;border:1px solid rgba(34,197,94,0.25)}
+.alert-err{background:rgba(239,68,68,0.1);color:#fca5a5;border:1px solid rgba(239,68,68,0.25)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── ТЕМА ТОГЛЛ ── */
+.theme-toggle{display:flex;align-items:center;justify-content:space-between;padding:4px 0}
+.toggle-switch{position:relative;width:48px;height:26px;cursor:pointer}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-track{position:absolute;inset:0;background:rgba(255,255,255,0.1);border-radius:13px;
+  border:1px solid var(--border);transition:background .3s}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;
+  background:#fff;transition:transform .3s;font-size:12px;display:flex;align-items:center;justify-content:center}
+.toggle-switch input:checked + .toggle-track{background:var(--accent)}
+.toggle-switch input:checked ~ .toggle-thumb{transform:translateX(22px)}
+.toggle-label{font-size:14px;font-weight:600;color:var(--text)}
+.toggle-sub{font-size:12px;color:var(--text2)}
+
+/* ── ИНФОРМАЦИЯ ── */
+.info-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;
+  border-bottom:1px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.info-label{font-size:13px;color:var(--text2)}
+.info-value{font-size:13px;font-weight:700;color:var(--text)}
+
+/* ── SPINNER ── */
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;
+  border-radius:50%;animation:spin .7s linear infinite;display:none}
+.btn.loading .spin{display:block}
+.btn.loading .btn-text{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+    @media (max-width: 480px) {
+      .content { padding: 16px 12px; }
+      .avatar-big { width: 80px; height: 80px; font-size: 30px; }
+      .user-name-big { font-size: 17px; }
+      .card { padding: 16px 14px; }
+      .field input { font-size: 16px; }
+      .btn { font-size: 14px; padding: 12px; }
+    }
+</style>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <button class="tb-back" onclick="window.location.href='./index.html'">← Назад</button>
+  <span class="tb-title">👤 Мой профиль</span>
+  <button class="btn-theme" id="theme-btn" onclick="toggleTheme()" title="Сменить тему">🌙</button>
+</div>
+
+<div class="content">
+
+  <!-- АВАТАР -->
+  <div class="avatar-block">
+    <div class="avatar-wrap">
+      <div class="avatar-big" id="avatar-big" onclick="document.getElementById('avatar-input').click()">
+        <span id="avatar-letter">?</span>
+        <div class="av-overlay">📷</div>
+      </div>
+      <input type="file" class="avatar-input" id="avatar-input" accept="image/*" onchange="uploadAvatar(this)">
+    </div>
+    <div class="user-name-big" id="profile-name">—</div>
+    <div class="user-role" id="profile-role">—</div>
+  </div>
+
+  <!-- ИНФОРМАЦИЯ -->
+  <div class="card">
+    <div class="card-title">📋 Информация</div>
+    <div class="info-row">
+      <span class="info-label">Логин</span>
+      <span class="info-value" id="info-login">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Роль</span>
+      <span class="info-value" id="info-role">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Имя</span>
+      <span class="info-value" id="info-name">—</span>
+    </div>
+  </div>
+
+  <!-- СМЕНИТЬ ИМЯ -->
+  <div class="card">
+    <div class="card-title">✏️ Изменить имя</div>
+    <div class="field">
+      <label>Отображаемое имя</label>
+      <input type="text" id="new-name" placeholder="Введите новое имя">
+    </div>
+    <button class="btn btn-primary" id="btn-name" onclick="saveName()">
+      <span class="btn-text">💾 Сохранить имя</span>
+      <div class="spin"></div>
+    </button>
+    <div class="alert" id="alert-name"></div>
+  </div>
+
+  <!-- СМЕНИТЬ ПАРОЛЬ -->
+  <div class="card">
+    <div class="card-title">🔑 Сменить пароль</div>
+    <div class="field">
+      <label>Текущий пароль</label>
+      <div class="input-wrap">
+        <input type="password" id="cur-pwd" placeholder="Введите текущий пароль">
+        <button class="eye-btn" onclick="toggleEye('cur-pwd',this)">👁</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Новый пароль</label>
+      <div class="input-wrap">
+        <input type="password" id="new-pwd" placeholder="Минимум 6 символов" oninput="checkPwdStr(this.value)">
+        <button class="eye-btn" onclick="toggleEye('new-pwd',this)">👁</button>
+      </div>
+      <div class="pwd-bars">
+        <div class="pwd-bar" id="pb1"></div>
+        <div class="pwd-bar" id="pb2"></div>
+        <div class="pwd-bar" id="pb3"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Повторите пароль</label>
+      <div class="input-wrap">
+        <input type="password" id="new-pwd2" placeholder="Повторите новый пароль">
+        <button class="eye-btn" onclick="toggleEye('new-pwd2',this)">👁</button>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btn-pwd" onclick="savePwd()">
+      <span class="btn-text">🔑 Сменить пароль</span>
+      <div class="spin"></div>
+    </button>
+    <div class="alert" id="alert-pwd"></div>
+  </div>
+
+  <!-- ТЕМА -->
+  <div class="card">
+    <div class="card-title">🎨 Оформление</div>
+    <div class="theme-toggle">
+      <div>
+        <div class="toggle-label">Светлая тема</div>
+        <div class="toggle-sub">Переключить тему оформления</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="theme-check" onchange="toggleTheme()">
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb" id="theme-thumb">🌙</div>
+      </label>
+    </div>
+  </div>
+
+  <!-- ВЫХОД -->
+  <div class="card">
+    <button class="btn btn-danger" onclick="logout()">🚪 Выйти из аккаунта</button>
+  </div>
+
+</div>
+
+<script>
+const SB_URL  = 'https://ljtogliylpubvkckpwyv.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqdG9nbGl5bHB1YnZrY2twd3l2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNzEzODQsImV4cCI6MjA4ODc0NzM4NH0.91EQ_EEfi8X09Vm0jmH12_35R6tf0BwtTGoX3K5lgfc';
+const SALT    = 'pedagog_sko_2025_';
+const BUCKET  = 'pedagog-files';
+
+let me = null;
+
+/* ══ INIT ══ */
+document.addEventListener('DOMContentLoaded', async () => {
+  const raw = sessionStorage.getItem('psess_user');
+  if (!raw) { window.location.href='./auth.html'; return; }
+  me = JSON.parse(raw);
+
+  // Заполняем профиль
+  document.getElementById('profile-name').textContent = me.name;
+  document.getElementById('profile-role').textContent = me.role === 'admin' ? '🛡️ Администратор' : '👩‍🏫 Педагог';
+  document.getElementById('avatar-letter').textContent = (me.name||'?')[0].toUpperCase();
+  document.getElementById('info-login').textContent = me.login;
+  document.getElementById('info-role').textContent  = me.role === 'admin' ? 'Администратор' : 'Педагог';
+  document.getElementById('info-name').textContent  = me.name;
+  document.getElementById('new-name').value         = me.name;
+
+  // Аватар из Supabase
+  try {
+    const rows = await sb(`pedagog_users?id=eq.${encodeURIComponent(me.id)}&select=avatar_url`);
+    if (rows?.[0]?.avatar_url) setAvatarImg(rows[0].avatar_url);
+  } catch(e) {}
+
+  // Применяем сохранённую тему
+  const savedTheme = localStorage.getItem('portal_theme') || 'dark';
+  applyTheme(savedTheme);
+});
+
+/* ══ SUPABASE ══ */
+async function sb(path, opts={}) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    headers:{
+      'apikey':SB_ANON,'Authorization':'Bearer '+SB_ANON,
+      'Content-Type':'application/json',
+      'Prefer': opts.prefer||(opts.method==='POST'?'return=representation':'return=minimal'),
+      ...(opts.headers||{})
+    }, ...opts
+  });
+  if (opts.method==='DELETE'||opts.method==='PATCH') return true;
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.message||r.statusText);
+  return data;
+}
+
+/* ══ SHA256 ══ */
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ══ АВАТАР ══ */
+function setAvatarImg(url) {
+  const av = document.getElementById('avatar-big');
+  av.innerHTML = `<img src="${url}" alt="avatar"><div class="av-overlay">📷</div>`;
+}
+
+async function uploadAvatar(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2*1024*1024) { alert('Файл слишком большой (макс 2MB)'); return; }
+
+  const ext      = file.name.split('.').pop().toLowerCase();
+  const fileName = `avatars/${me.id}.${ext}`;
+
+  try {
+    const r = await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${fileName}`, {
+      method:'POST',
+      headers:{'apikey':SB_ANON,'Authorization':'Bearer '+SB_ANON,
+               'Content-Type':file.type||'image/jpeg','x-upsert':'true'},
+      body: file
+    });
+    if (!r.ok) throw new Error('Ошибка загрузки');
+    const url = `${SB_URL}/storage/v1/object/public/${BUCKET}/${fileName}`;
+    // Сохраняем в профиль
+    await sb(`pedagog_users?id=eq.${encodeURIComponent(me.id)}`, {
+      method:'PATCH', body: JSON.stringify({avatar_url: url})
+    });
+    setAvatarImg(url + '?t=' + Date.now());
+    showAlert('alert-name','ok','✅ Аватар обновлён!');
+  } catch(e) { alert('Ошибка: ' + e.message); }
+}
+
+/* ══ СМЕНИТЬ ИМЯ ══ */
+async function saveName() {
+  const name = document.getElementById('new-name').value.trim();
+  if (!name) { showAlert('alert-name','err','Введите имя'); return; }
+  if (name === me.name) { showAlert('alert-name','err','Это уже ваше имя'); return; }
+
+  setLoading('btn-name', true);
+  try {
+    await sb(`pedagog_users?id=eq.${encodeURIComponent(me.id)}`, {
+      method:'PATCH', body: JSON.stringify({name})
+    });
+    me.name = name;
+    sessionStorage.setItem('psess_user', JSON.stringify(me));
+    document.getElementById('profile-name').textContent = name;
+    document.getElementById('info-name').textContent    = name;
+    document.getElementById('avatar-letter').textContent = name[0].toUpperCase();
+    showAlert('alert-name','ok','✅ Имя изменено!');
+  } catch(e) { showAlert('alert-name','err','Ошибка: '+e.message); }
+  setLoading('btn-name', false);
+}
+
+/* ══ СМЕНИТЬ ПАРОЛЬ ══ */
+async function savePwd() {
+  const curPwd = document.getElementById('cur-pwd').value;
+  const newPwd = document.getElementById('new-pwd').value;
+  const newPwd2= document.getElementById('new-pwd2').value;
+
+  if (!curPwd)          { showAlert('alert-pwd','err','Введите текущий пароль'); return; }
+  if (newPwd.length<6)  { showAlert('alert-pwd','err','Новый пароль минимум 6 символов'); return; }
+  if (newPwd !== newPwd2){ showAlert('alert-pwd','err','Пароли не совпадают'); return; }
+
+  setLoading('btn-pwd', true);
+  try {
+    // Проверяем текущий пароль
+    const curHash = await sha256(SALT + curPwd);
+    const rows = await sb(`pedagog_users?id=eq.${encodeURIComponent(me.id)}&select=password_hash`);
+    if (!rows?.[0] || rows[0].password_hash !== curHash) {
+      showAlert('alert-pwd','err','❌ Неверный текущий пароль');
+      setLoading('btn-pwd', false);
+      return;
+    }
+    const newHash = await sha256(SALT + newPwd);
+    await sb(`pedagog_users?id=eq.${encodeURIComponent(me.id)}`, {
+      method:'PATCH', body: JSON.stringify({password_hash: newHash, must_change_password: false})
+    });
+    document.getElementById('cur-pwd').value  = '';
+    document.getElementById('new-pwd').value  = '';
+    document.getElementById('new-pwd2').value = '';
+    ['pb1','pb2','pb3'].forEach(id => document.getElementById(id).className='pwd-bar');
+    showAlert('alert-pwd','ok','✅ Пароль успешно изменён!');
+  } catch(e) { showAlert('alert-pwd','err','Ошибка: '+e.message); }
+  setLoading('btn-pwd', false);
+}
+
+/* ══ ТЕМА ══ */
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme==='light'?'light':'');
+  const check = document.getElementById('theme-check');
+  const thumb = document.getElementById('theme-thumb');
+  const btn   = document.getElementById('theme-btn');
+  check.checked   = theme === 'light';
+  thumb.textContent = theme === 'light' ? '☀️' : '🌙';
+  btn.textContent   = theme === 'light' ? '☀️' : '🌙';
+  localStorage.setItem('portal_theme', theme);
+}
+
+function toggleTheme() {
+  const cur = localStorage.getItem('portal_theme') || 'dark';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+}
+
+/* ══ УТИЛИТЫ ══ */
+function toggleEye(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type==='password' ? 'text' : 'password';
+  btn.textContent = inp.type==='password' ? '👁' : '🙈';
+}
+
+function checkPwdStr(val) {
+  const bars = ['pb1','pb2','pb3'];
+  bars.forEach(b=>document.getElementById(b).className='pwd-bar');
+  if (!val) return;
+  const strong = val.length>=8 && /[A-Z]/.test(val) && /[0-9]/.test(val);
+  const medium = val.length>=6;
+  if (strong)      bars.forEach(b=>document.getElementById(b).classList.add('strong'));
+  else if (medium) { document.getElementById('pb1').classList.add('medium'); document.getElementById('pb2').classList.add('medium'); }
+  else             document.getElementById('pb1').classList.add('weak');
+}
+
+function showAlert(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = 'alert alert-'+(type==='ok'?'ok':'err');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display='none', 4000);
+}
+
+function setLoading(id, on) {
+  const btn = document.getElementById(id);
+  btn.disabled = on; btn.classList.toggle('loading', on);
+}
+
+function logout() {
+  if (!confirm('Выйти из аккаунта?')) return;
+  localStorage.removeItem('psess_token');
+  sessionStorage.removeItem('psess_token');
+  sessionStorage.removeItem('psess_user');
+  window.location.href='./auth.html';
+}
+</script>
+</body>
+</html>

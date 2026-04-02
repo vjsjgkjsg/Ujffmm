@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <!-- ═══ AUTH GATE ═══ -->
+  <script>
+    (function(){
+      var tk = localStorage.getItem('psess_token') || sessionStorage.getItem('psess_token');
+      if (!tk) { window.location.replace('./auth.html'); }
+      // Тема
+      var t = localStorage.getItem('portal_theme') || 'dark';
+      if (t === 'light') document.documentElement.setAttribute('data-theme','light');
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Цифровой навигатор педагога — Петропавловск</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+<style id="nav-user-styles">
+.nav-user-wrap{position:relative;display:inline-block;}
+.nav-user-menu{position:absolute;top:calc(100% + 8px);right:0;background:#fff;border:1px solid #e5eaf4;border-radius:14px;padding:8px;min-width:160px;box-shadow:0 8px 32px rgba(0,51,102,.18);z-index:500;animation:num-in .2s cubic-bezier(.34,1.56,.64,1);}
+@keyframes num-in{from{opacity:0;transform:translateY(-8px) scale(.96)}to{opacity:1;transform:none}}
+.num-name{font-size:12px;font-weight:800;color:#003366;padding:6px 10px 8px;border-bottom:1px solid #f0f4f8;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
+.num-logout{width:100%;padding:8px 10px;background:none;border:none;color:#ef4444;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;border-radius:9px;text-align:left;transition:background .15s;}
+.num-logout:hover{background:#fef2f2;}
+
+/* ── CHAT UNREAD BADGE ── */
+.nav-chat-badge{
+  position:absolute;top:-6px;right:-10px;
+  min-width:17px;height:17px;border-radius:9px;padding:0 4px;
+  background:#ef4444;color:#fff;font-size:10px;font-weight:900;
+  display:flex!important;align-items:center;justify-content:center;
+  border:2px solid #fff;animation:badge-pop .3s cubic-bezier(.34,1.56,.64,1);
+  line-height:1;
+}
+.tile-chat-badge{
+  position:absolute;top:-8px;right:-8px;
+  min-width:20px;height:20px;border-radius:10px;padding:0 5px;
+  background:#ef4444;color:#fff;font-size:11px;font-weight:900;
+  display:flex!important;align-items:center;justify-content:center;
+  border:2px solid #fff;animation:badge-pop .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes badge-pop{
+  0%{transform:scale(0);}
+  70%{transform:scale(1.2);}
+  100%{transform:scale(1);}
+}
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1976d2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Навигатор">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="theme.css">
+<script src="theme.js"></script>
+
+</head>
+<body>
+
+
+
+
+<!-- ШАПКА -->
+<header id="main-header">
+  <div class="header-inner">
+    <div class="logo-area">
+      <div class="logo-emblem">🎓</div>
+      <div class="logo-text">
+        <span class="logo-title">Цифровой навигатор педагога</span>
+        <span class="logo-subtitle">г. Петропавловск &bull; СКО</span>
+      </div>
+    </div>
+    <nav id="desktop-nav">
+      <a href="#" class="nav-link active" data-section="home">Главная</a>
+      <a href="#" class="nav-link" data-section="metodichka">Методичка</a>
+      <a href="games.html" class="nav-link">🎮 Игры</a>
+      <a href="#" class="nav-link" data-section="sights">Достопримечательности</a>
+      <a href="#" class="nav-link" data-section="talks">Беседы</a>
+      <a href="#" class="nav-link" data-section="presentations">Презентации</a>
+      <button id="theme-toggle-btn" onclick="THEME.toggle()" title="Сменить тему" style="background:none;border:1px solid var(--border,rgba(255,255,255,0.1));border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:16px;color:var(--text2,#7a90b8)">🌙</button>
+    </nav>
+    <div class="header-controls">
+      <button id="accessibility-btn" title="Версия для слабовидящих" aria-label="Версия для слабовидящих">
+        <span class="eye-icon">&#128065;</span>
+        <span class="btn-label">Слабовидящим</span>
+      </button>
+      <button id="burger-btn" aria-label="Открыть меню" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- БОКОВОЕ МЕНЮ -->
+<div id="sidebar-overlay"></div>
+<aside id="sidebar">
+  <div class="sidebar-header">
+    <span>Навигация</span>
+    <button id="close-sidebar" aria-label="Закрыть меню">&#10005;</button>
+  </div>
+  <!-- USER БЛОК В SIDEBAR -->
+  <div id="sb-user-block" style="display:none;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.08)">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+      background:rgba(255,255,255,0.06);border-radius:12px;margin-bottom:8px">
+      <div id="sb-av" style="width:38px;height:38px;border-radius:50%;
+        background:linear-gradient(135deg,#2563eb,#7c3aed);
+        display:flex;align-items:center;justify-content:center;
+        font-size:16px;font-weight:800;color:#fff;flex-shrink:0">?</div>
+      <div style="flex:1;min-width:0">
+        <div id="sb-name" style="font-size:13px;font-weight:700;color:#fff;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis">...</div>
+        <div id="sb-role" style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:1px">Педагог</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <a href="profile.html" style="display:flex;align-items:center;gap:8px;padding:8px 10px;
+        border-radius:10px;text-decoration:none;font-size:13px;font-weight:600;
+        color:rgba(255,255,255,0.7);transition:background .15s"
+        onmouseover="this.style.background='rgba(255,255,255,0.08)'"
+        onmouseout="this.style.background='transparent'">
+        👤 Мой профиль
+      </a>
+      <a href="chat.html" id="sb-chat-link" style="display:flex;align-items:center;gap:8px;padding:8px 10px;
+        border-radius:10px;text-decoration:none;font-size:13px;font-weight:600;
+        color:rgba(255,255,255,0.7);transition:background .15s;position:relative"
+        onmouseover="this.style.background='rgba(255,255,255,0.08)'"
+        onmouseout="this.style.background='transparent'">
+        💬 Чат
+        <span id="sb-chat-badge" style="display:none;background:#ef4444;color:#fff;
+          font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:8px;
+          padding:0 3px;align-items:center;justify-content:center">0</span>
+      </a>
+      <a href="games.html" style="display:flex;align-items:center;gap:8px;padding:8px 10px;
+        border-radius:10px;text-decoration:none;font-size:13px;font-weight:600;
+        color:rgba(255,255,255,0.7);transition:background .15s"
+        onmouseover="this.style.background='rgba(255,255,255,0.08)'"
+        onmouseout="this.style.background='transparent'">
+        🎮 Игры
+      </a>
+      <button onclick="doLogout()" style="display:flex;align-items:center;gap:8px;padding:8px 10px;
+        border-radius:10px;border:none;background:none;font-family:inherit;
+        font-size:13px;font-weight:600;color:#fca5a5;cursor:pointer;width:100%;text-align:left;
+        transition:background .15s"
+        onmouseover="this.style.background='rgba(239,68,68,0.1)'"
+        onmouseout="this.style.background='transparent'">
+        🚪 Выйти
+      </button>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="#" class="sidebar-link" data-section="home">🏠 Главная</a>
+    <a href="#" class="sidebar-link" data-section="metodichka">📚 Методичка</a>
+    <a href="games.html" class="sidebar-link">🎮 Игровая комната ⭐</a>
+    <a href="#" class="sidebar-link" data-section="sights">🏛 Достопримечательности</a>
+    <a href="#" class="sidebar-link" data-section="talks">💬 Полезные беседы</a>
+    <a href="#" class="sidebar-link" data-section="presentations">📊 Презентации</a>
+  </nav>
+  <div class="sidebar-footer">
+    <small>&copy; 2025 Портал воспитателей<br>г. Петропавловск</small>
+  </div>
+</aside>
+
+<!-- КНОПКА ВЕРНУТЬСЯ -->
+<div id="back-btn-wrap">
+  <button id="back-home-btn">&#8592; Вернуться на главную</button>
+</div>
+
+<!-- ОСНОВНОЙ КОНТЕНТ -->
+<main id="main-content">
+
+  <!-- ГЛАВНАЯ -->
+  <section id="section-home" class="section active">
+    <div class="hero-block">
+      <div class="hero-bg-pattern"></div>
+      <div class="hero-content">
+        <div class="hero-badge">г. Петропавловск &bull; Северо-Казахстанская область</div>
+        <h1 class="hero-title">Цифровой навигатор<br><em>педагога</em></h1>
+        <p class="hero-desc">Единый ресурс для воспитателей Петропавловска — обмен методическими материалами, игровые сценарии, краеведение и профессиональное сообщество.</p>
+        <button class="hero-cta" data-section="metodichka">Начать работу &#8594;</button>
+      </div>
+      <div class="hero-visual">
+        <div class="city-card">
+          <div class="city-card-icon">&#127961;</div>
+          <div class="city-card-body">
+            <h3>О городе</h3>
+            <ul class="city-facts">
+              <li><strong>Основан:</strong> 1752 год</li>
+              <li><strong>Население:</strong> ~220 000 чел.</li>
+              <li><strong>Статус:</strong> Областной центр СКО</li>
+              <li><strong>Наследие:</strong> Крепость Святого Петра</li>
+              <li><strong>Культура:</strong> Музеи, театры, парки</li>
+            </ul>
+            <p class="city-note">Город с богатой историей на стыке двух культур — казахской и русской.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ПЛИТКИ -->
+    <div class="tiles-section">
+      <h2 class="section-heading">Разделы портала</h2>
+      <div class="tiles-grid">
+        <button class="tile" data-section="metodichka">
+          <div class="tile-icon">&#128218;</div>
+          <div class="tile-body"><h3>Методичка</h3><p>Планы занятий, разработки уроков</p></div>
+          <div class="tile-arrow">&#8594;</div>
+        </button>
+        <a href="games.html" class="tile tile-games-link">
+          <div class="tile-icon">&#127918;</div>
+          <div class="tile-body"><h3>Игровая комната</h3><p>Онлайн-игры + офлайн-занятия</p></div>
+          <div class="tile-arrow tile-new-badge">&#11088; NEW</div>
+        </a>
+        <button class="tile" data-section="sights">
+          <div class="tile-icon">&#127963;</div>
+          <div class="tile-body"><h3>Достопримечательности</h3><p>Краеведение Петропавловска</p></div>
+          <div class="tile-arrow">&#8594;</div>
+        </button>
+        <button class="tile" data-section="talks">
+          <div class="tile-icon">&#128172;</div>
+          <div class="tile-body"><h3>Полезные беседы</h3><p>Правила поведения и безопасность</p></div>
+          <div class="tile-arrow">&#8594;</div>
+        </button>
+        <button class="tile" data-section="presentations">
+          <div class="tile-icon">&#128202;</div>
+          <div class="tile-body"><h3>Презентации</h3><p>Готовые слайды для занятий</p></div>
+          <div class="tile-arrow">&#8594;</div>
+        </button>
+        <button class="tile tile-chat" onclick="window.location.href='chat.html'">
+          <div class="tile-icon">&#128172;</div>
+          <div class="tile-body"><h3>Чат педагогов</h3><p>Общение внутри портала</p></div>
+          <div class="tile-arrow" style="position:relative">&#8594;<span class="tile-chat-badge" id="tile-chat-badge" style="display:none"></span></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-item"><span class="stat-num">1752</span><span class="stat-label">Год основания города</span></div>
+      <div class="stat-item"><span class="stat-num">270+</span><span class="stat-label">Лет истории Петропавловска</span></div>
+      <div class="stat-item"><span class="stat-num">5</span><span class="stat-label">Онлайн-игр для детей</span></div>
+      <div class="stat-item" id="stat-users"><span class="stat-num" id="stat-users-num">—</span><span class="stat-label">Педагогов в системе</span></div>
+    </div>
+  </section>
+
+  <!-- МЕТОДИЧКА -->
+  <section id="section-metodichka" class="section">
+    <div class="page-header">
+      <h2>&#128218; Методическая копилка</h2>
+      <p>Разработки занятий, конспекты и дидактические материалы для воспитателей</p>
+    </div>
+    <div id="met-loading" style="text-align:center;padding:30px;color:#888">⏳ Загрузка материалов...</div>
+    <div class="metodichka-list" id="met-list"></div>
+    <div id="met-empty" style="display:none;text-align:center;padding:30px;color:#888">
+      <div style="font-size:36px;margin-bottom:10px">📁</div>
+      <p>Материалы пока не загружены.</p>
+      <p style="font-size:12px;margin-top:6px">Администратор добавит их в ближайшее время.</p>
+    </div>
+  </section>
+
+  <!-- ИГРЫ -->
+  <!-- ═══ ОБЪЯВЛЕНИЯ ═══ -->
+  <section id="section-broadcasts" class="section">
+    <h2 class="section-h">📨 Объявления от администрации</h2>
+    <div id="broadcasts-list"><div style="color:var(--text3,#4a5f82);text-align:center;padding:20px;font-size:13px">Загрузка...</div></div>
+  </section>
+
+  <!-- ═══ МЕРОПРИЯТИЯ ═══ -->
+  <section id="section-events" class="section">
+    <h2 class="section-h">📅 Ближайшие мероприятия</h2>
+    <div id="events-list"><div style="color:var(--text3,#4a5f82);text-align:center;padding:20px;font-size:13px">Загрузка...</div></div>
+  </section>
+
+  <section id="section-games" class="section">
+    <div class="page-header">
+      <h2>&#127918; Игры для занятий</h2>
+      <p>Дидактические, подвижные и развивающие игры для дошкольников</p>
+    </div>
+    <div class="page-header" style="margin-top:-12px;padding-top:0">
+      <a href="games.html" class="download-btn" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;padding:12px 24px;font-size:14px;font-weight:800">
+        &#127918; Открыть Гейм-рум — интерактивные игры онлайн
+      </a>
+    </div>
+    <div class="games-grid">
+      <div class="game-card">
+        <div class="game-emoji">&#127183;</div>
+        <h3>Лото «Животные Казахстана»</h3>
+        <p>Дидактическая игра на запоминание. 4–6 игроков. Карточки с изображениями флоры и фауны.</p>
+        <span class="game-age">Возраст: 4+</span>
+      </div>
+      <div class="game-card">
+        <div class="game-emoji">&#127939;</div>
+        <h3>Байга — степная скачка</h3>
+        <p>Подвижная игра на улице. Имитация конных скачек, развитие ловкости и командного духа.</p>
+        <span class="game-age">Возраст: 5+</span>
+      </div>
+      <div class="game-card">
+        <div class="game-emoji">&#129513;</div>
+        <h3>Пазл «Карта СКО»</h3>
+        <p>Собери карту Северо-Казахстанской области из 24 частей. Знакомство с районами и городами.</p>
+        <span class="game-age">Возраст: 6+</span>
+      </div>
+      <div class="game-card">
+        <div class="game-emoji">&#127917;</div>
+        <h3>Ролевая игра «Базар»</h3>
+        <p>Социально-ролевая игра: продавец и покупатель. Математика, коммуникация, уважение к труду.</p>
+        <span class="game-age">Возраст: 5+</span>
+      </div>
+      <div class="game-card">
+        <div class="game-emoji">&#128289;</div>
+        <h3>«Слова города» — словарная игра</h3>
+        <p>Назови слово, связанное с Петропавловском. Развитие речи и краеведческих знаний.</p>
+        <span class="game-age">Возраст: 6+</span>
+      </div>
+      <div class="game-card">
+        <div class="game-emoji">&#127912;</div>
+        <h3>Раскраски «Юрта и традиции»</h3>
+        <p>Тематические раскраски с казахскими орнаментами, юртой, национальными костюмами.</p>
+        <span class="game-age">Возраст: 3+</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ДОСТОПРИМЕЧАТЕЛЬНОСТИ -->
+  <section id="section-sights" class="section">
+    <div class="page-header">
+      <h2>&#127963; Достопримечательности Петропавловска</h2>
+      <p>Краеведческие маршруты для познавательных экскурсий с воспитанниками</p>
+    </div>
+
+    <div class="sight-card featured">
+      <div class="sight-img-placeholder sight-ablai">
+        <div class="sight-placeholder-inner">&#127984;</div>
+      </div>
+      <div class="sight-content">
+        <div class="sight-badge">Исторический объект</div>
+        <h3>Резиденция Абылай хана</h3>
+        <p>Историко-культурный музейный комплекс, посвящённый великому казахскому хану Абылаю, который объединил три жуза. Резиденция воссоздаёт атмосферу XVIII века — эпохи, когда Петропавловск (крепость Святого Петра) был важным форпостом и местом переговоров.</p>
+        <h4>&#128161; Советы для экскурсии с детьми:</h4>
+        <ul class="tips-list">
+          <li>Заранее расскажите детям сказание об Абылай хане в игровой форме</li>
+          <li>Попросите экскурсовода провести интерактивный урок в юрте</li>
+          <li>Обратите внимание на казахские орнаменты — найдите узоры из занятий</li>
+          <li>После экскурсии нарисуйте юрту или костюм хана</li>
+          <li>Задайте детям вопрос: «Что значит объединить народ?»</li>
+        </ul>
+        <div class="sight-meta">
+          <span>&#128205; ул. Абылай хана, Петропавловск</span>
+          <span>&#128336; Вт–Вс: 9:00–18:00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sight-card featured">
+      <div class="sight-img-placeholder sight-park">
+        <div class="sight-placeholder-inner">&#127795;</div>
+      </div>
+      <div class="sight-content">
+        <div class="sight-badge">Парк и мемориал</div>
+        <h3>Парк Победы</h3>
+        <p>Главный парк города с мемориальным комплексом, посвящённым Великой Отечественной войне. Здесь находятся памятники героям-петропавловцам, Вечный огонь и аллея Памяти. Ежегодно в День Победы проходят торжественные мероприятия с участием ветеранов.</p>
+        <h4>&#128161; Советы для экскурсии с детьми:</h4>
+        <ul class="tips-list">
+          <li>Проведите беседу о подвиге солдат до посещения парка</li>
+          <li>У Вечного огня соблюдайте минуту тишины — это воспитывает уважение</li>
+          <li>Прочитайте вместе имена на памятных плитах, объясните значение</li>
+          <li>После прогулки нарисуйте открытку «Я помню, я горжусь»</li>
+          <li>Расскажите о медалях и орденах: чем награждали солдат</li>
+        </ul>
+        <div class="sight-meta">
+          <span>&#128205; Парк Победы, центр Петропавловска</span>
+          <span>&#128336; Открыт ежедневно</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sights-more">
+      <h3>Другие интересные места</h3>
+      <div class="sights-mini-grid">
+        <div class="mini-sight"><span>&#127963;</span><strong>Музей Ботая</strong><p>Уникальные находки эпохи энеолита — место первого приручения лошади.</p></div>
+        <div class="mini-sight"><span>&#9962;</span><strong>Собор Петра и Павла</strong><p>Православный собор XIX века, памятник архитектуры.</p></div>
+        <div class="mini-sight"><span>&#127917;</span><strong>Русский театр драмы</strong><p>Один из старейших театров Казахстана, основан в 1936 году.</p></div>
+        <div class="mini-sight"><span>&#128332;</span><strong>Мечеть «Кызыл Жар»</strong><p>Современная мечеть — символ духовности и межнационального единства.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- БЕСЕДЫ -->
+  <section id="section-talks" class="section">
+    <div class="page-header">
+      <h2>&#128172; Полезные беседы с детьми</h2>
+      <p>Готовые сценарии тематических бесед с воспитанниками</p>
+    </div>
+
+    <!-- Динамические материалы из Supabase -->
+    <div id="talks-loading" style="text-align:center;padding:20px;color:#888">⏳ Загрузка материалов...</div>
+    <div id="talks-dyn-list" class="metodichka-list"></div>
+    <div id="talks-dyn-empty" style="display:none"></div>
+
+    <div class="accordion-group">
+      <h3 class="accordion-category">&#127963; Поведение в общественных местах</h3>
+
+      <div class="accordion-item">
+        <button class="accordion-trigger">Правила поведения в музее <span class="acc-icon">+</span></button>
+        <div class="accordion-body">
+          <p><strong>Цель беседы:</strong> научить детей уважительно относиться к культурным ценностям и соблюдать тишину.</p>
+          <ol class="talk-list">
+            <li><strong>В музее говорим тихо</strong> — громкие голоса мешают другим посетителям и нарушают торжественную атмосферу.</li>
+            <li><strong>Руками не трогаем экспонаты</strong> — даже если очень хочется! Экспонаты могут быть хрупкими и очень старыми.</li>
+            <li><strong>Идём рядом с воспитателем</strong> — в музее легко заблудиться, поэтому держимся группой.</li>
+            <li><strong>Задаём вопросы экскурсоводу</strong> — любопытство приветствуется, но по очереди и вежливо.</li>
+            <li><strong>Фотографируем с разрешения</strong> — в некоторых залах съёмка запрещена.</li>
+          </ol>
+          <div class="talk-question">&#10067; <em>Спросите детей: «Почему важно беречь старинные вещи?»</em></div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <button class="accordion-trigger">Поведение в театре и на концерте <span class="acc-icon">+</span></button>
+        <div class="accordion-body">
+          <p><strong>Цель беседы:</strong> воспитать культуру зрителя, умение наслаждаться искусством.</p>
+          <ol class="talk-list">
+            <li><strong>Приходим заранее</strong> — не опаздываем, чтобы не мешать другим зрителям занять места.</li>
+            <li><strong>Во время спектакля молчим</strong> — актёры на сцене слышат зал, и наши разговоры их отвлекают.</li>
+            <li><strong>Телефон убираем в карман</strong> — свет экрана мешает смотреть соседям.</li>
+            <li><strong>Хлопаем в конце</strong> — аплодисменты — это «спасибо» артистам за их труд.</li>
+            <li><strong>Не едим и не шуршим</strong> — сладости оставляем на антракт.</li>
+          </ol>
+          <div class="talk-question">&#10067; <em>Спросите детей: «Как бы ты себя чувствовал, если бы тебе мешали выступать?»</em></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-group">
+      <h3 class="accordion-category">&#128678; Безопасность на дороге</h3>
+
+      <div class="accordion-item">
+        <button class="accordion-trigger">Правила пешехода <span class="acc-icon">+</span></button>
+        <div class="accordion-body">
+          <p><strong>Цель беседы:</strong> сформировать у детей осознанное безопасное поведение на улице.</p>
+          <ol class="talk-list">
+            <li><strong>Переходим только на зелёный свет</strong> — красный говорит «стой!», жёлтый — «приготовься», зелёный — «иди».</li>
+            <li><strong>Смотрим сначала налево, потом направо</strong> — и только потом начинаем переход.</li>
+            <li><strong>Идём по зебре</strong> — это безопасное место для пешеходов, водители должны нас пропустить.</li>
+            <li><strong>Не играем у дороги</strong> — мяч, самокат, велосипед — только во дворе или парке.</li>
+            <li><strong>Взрослый держит за руку</strong> — рядом с проезжей частью всегда держимся за руку.</li>
+          </ol>
+          <div class="talk-question">&#10067; <em>Игра: «Светофор» — воспитатель называет цвет, дети выполняют действие.</em></div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <button class="accordion-trigger">Правила в транспорте <span class="acc-icon">+</span></button>
+        <div class="accordion-body">
+          <p><strong>Цель беседы:</strong> научить детей безопасному поведению в автобусе, маршрутке, трамвае.</p>
+          <ol class="talk-list">
+            <li><strong>Ждём транспорт на остановке</strong> — не стоим у края, отступаем назад.</li>
+            <li><strong>Заходим по очереди</strong> — не толкаемся, пропускаем выходящих.</li>
+            <li><strong>Держимся за поручень</strong> — при торможении можно упасть.</li>
+            <li><strong>Уступаем место</strong> — пожилым людям, беременным женщинам, пассажирам с детьми.</li>
+            <li><strong>Не высовываемся из окон</strong> — это очень опасно!</li>
+          </ol>
+          <div class="talk-question">&#10067; <em>Спросите детей: «Кому ты уступишь место в автобусе и почему?»</em></div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <button class="accordion-trigger">Если потерялся в городе <span class="acc-icon">+</span></button>
+        <div class="accordion-body">
+          <p><strong>Цель беседы:</strong> подготовить детей к действиям в экстренной ситуации.</p>
+          <ol class="talk-list">
+            <li><strong>Стой на месте и не паникуй</strong> — взрослые тебя ищут, лучше оставаться там, где потерялся.</li>
+            <li><strong>Обратись к полицейскому</strong> — найди человека в форме или охранника в магазине.</li>
+            <li><strong>Назови своё имя и имя мамы или папы</strong> — скажи, откуда пришёл.</li>
+            <li><strong>Знай наизусть номер телефона родителей</strong> — попроси взрослого помочь позвонить.</li>
+            <li><strong>Не уходи с незнакомыми</strong> — даже если они говорят, что знают твоих родителей.</li>
+          </ol>
+          <div class="talk-question">&#10067; <em>Практика: выучите с детьми домашний адрес и телефон мамы.</em></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-group">
+      <h3 class="accordion-category">&#129309; Взаимоуважение и дружба</h3>
+
+      <div class="accordion-item">
+        <button class="accordion-trigger">Беседа «Дружба народов» <span class="acc-icon">+</span></button>
+        <div class="accordion-body">
+          <p><strong>Цель беседы:</strong> воспитать уважение к людям разных национальностей.</p>
+          <ol class="talk-list">
+            <li><strong>Все люди разные — и это здорово!</strong> — у нас разные язык, традиции, еда, но мы все живём в одном городе.</li>
+            <li><strong>Петропавловск — многонациональный город</strong> — здесь живут казахи, русские, украинцы, немцы и другие народы.</li>
+            <li><strong>Уважай чужие традиции</strong> — не смейся над праздниками и обычаями других.</li>
+            <li><strong>Учи слова приветствия</strong> — «Сәлем!» по-казахски, «Привет!» по-русски — улыбка всегда понятна.</li>
+            <li><strong>Дружба сильнее различий</strong> — вместе строить, играть и жить интереснее.</li>
+          </ol>
+          <div class="talk-question">&#10067; <em>Спросите детей: «Есть ли у тебя друзья другой национальности? Расскажи о них.»</em></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ПРЕЗЕНТАЦИИ -->
+  <section id="section-presentations" class="section">
+    <div class="page-header">
+      <h2>&#128202; Презентации для занятий</h2>
+      <p>Готовые слайды и мультимедийные материалы</p>
+    </div>
+    <div id="pres-loading" style="text-align:center;padding:30px;color:#888">⏳ Загрузка презентаций...</div>
+    <div class="pres-grid" id="pres-list"></div>
+    <div id="pres-empty" style="display:none;text-align:center;padding:30px;color:#888">
+      <div style="font-size:36px;margin-bottom:10px">📊</div>
+      <p>Презентации пока не загружены.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer id="main-footer">
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <span>&#127891;</span>
+      <div>
+        <strong>Цифровой навигатор педагога</strong>
+        <small>Петропавловск, СКО, Казахстан</small>
+      </div>
+    </div>
+    <div class="footer-links">
+      <a href="#" data-section="metodichka">Методичка</a>
+      <a href="#" data-section="games">Игры</a>
+      <a href="#" data-section="sights">Достопримечательности</a>
+      <a href="#" data-section="talks">Беседы</a>
+    </div>
+    <div class="footer-copy">
+      <p>&copy; 2025 Портал воспитателей г. Петропавловска</p>
+      <p>Создан для педагогов дошкольного образования СКО</p>
+    </div>
+  </div>
+</footer>
+
+<div id="toast" aria-live="polite"></div>
+
+<script src="script.js"></script>
+
+<!-- ═══════════════════════════════════════════════════
+     INTERNAL CHAT MODAL — Чат педагогов СКО
+═══════════════════════════════════════════════════ -->
+<div id="chat-modal" class="chat-modal-overlay" style="display:none">
+  <div class="chat-modal">
+    <div class="chat-modal-header">
+      <div class="chat-header-left">
+        <span class="chat-online-dot"></span>
+        <span>💬 Чат педагогов СКО</span>
+      </div>
+      <div class="chat-header-right">
+        <span id="chat-user-badge" class="chat-user-badge"></span>
+        <button class="chat-close" onclick="closeChatModal()">✕</button>
+      </div>
+    </div>
+    <!-- Not logged in state -->
+    <div id="chat-noauth" class="chat-noauth" style="display:none">
+      <div class="chat-noauth-icon">🔒</div>
+      <h3>Войдите, чтобы общаться</h3>
+      <p>Чат доступен только зарегистрированным педагогам портала.</p>
+      
+    </div>
+    <!-- Chat state -->
+    <div id="chat-body" style="display:none">
+      <div id="chat-messages" class="chat-messages"></div>
+      <div class="chat-input-row">
+        <input id="chat-input" type="text" class="chat-input" placeholder="Написать сообщение..." maxlength="300" autocomplete="off"/>
+        <button class="chat-send-btn" onclick="chatSend()" id="chat-send-btn">➤</button>
+      </div>
+      <div class="chat-input-hint">Нажмите Enter или ➤ для отправки</div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ── Chat overlay ── */
+.chat-modal-overlay{position:fixed;inset:0;background:rgba(0,0,12,.65);z-index:3000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);animation:fadein .2s ease;}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.chat-modal{background:#fff;border-radius:20px;width:92%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.35);animation:popin .3s cubic-bezier(.34,1.56,.64,1);}
+@keyframes popin{from{transform:scale(.82) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+/* Header */
+.chat-modal-header{background:linear-gradient(135deg,#003366,#0d5fa3);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.chat-header-left{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;}
+.chat-header-right{display:flex;align-items:center;gap:8px;}
+.chat-online-dot{width:9px;height:9px;background:#4ade80;border-radius:50%;box-shadow:0 0 6px #4ade80;animation:pulse-dot 2s infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+.chat-user-badge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:3px 10px;font-size:11px;font-weight:700;color:#fff;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chat-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;}
+.chat-close:hover{background:rgba(255,255,255,.3);}
+/* No auth */
+.chat-noauth{text-align:center;padding:48px 28px 40px;flex:1;}
+.chat-noauth-icon{font-size:60px;margin-bottom:14px;}
+.chat-noauth h3{font-size:1.4rem;font-weight:900;color:#003366;margin-bottom:8px;}
+.chat-noauth p{font-size:13px;color:#6b7280;line-height:1.6;margin-bottom:20px;}
+.chat-auth-btn{display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#003366,#1976D2);color:#fff;border-radius:28px;font-weight:800;font-size:13px;text-decoration:none;transition:all .2s;}
+.chat-auth-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,51,102,.4);}
+/* Messages */
+.chat-messages{flex:1;overflow-y:auto;padding:14px 14px 6px;display:flex;flex-direction:column;gap:8px;min-height:280px;max-height:380px;background:#f6f9ff;}
+.chat-msg{display:flex;flex-direction:column;max-width:78%;animation:msg-in .2s ease;}
+@keyframes msg-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.chat-msg.mine{align-self:flex-end;align-items:flex-end;}
+.chat-msg.theirs{align-self:flex-start;align-items:flex-start;}
+.chat-bubble{padding:9px 13px;border-radius:16px;font-size:13px;line-height:1.5;word-break:break-word;}
+.chat-msg.mine .chat-bubble{background:linear-gradient(135deg,#003366,#1565c0);color:#fff;border-bottom-right-radius:4px;}
+.chat-msg.theirs .chat-bubble{background:#fff;color:#1a1a2e;border:1px solid #e5eaf4;border-bottom-left-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.chat-msg-meta{font-size:10px;color:#94a3b8;margin-top:3px;padding:0 4px;}
+.chat-msg.mine .chat-msg-meta{color:#94a3b8;}
+.chat-msg-author{font-weight:800;font-size:11px;margin-bottom:3px;padding:0 4px;color:#003366;}
+.chat-msg.mine .chat-msg-author{display:none;}
+.chat-day-sep{text-align:center;font-size:11px;color:#94a3b8;font-weight:600;padding:4px 0;margin:4px 0;}
+.chat-empty{text-align:center;color:#94a3b8;font-size:13px;padding:40px 20px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+.chat-empty-icon{font-size:48px;}
+/* Input */
+.chat-input-row{display:flex;align-items:center;gap:8px;padding:10px 12px 6px;border-top:1px solid #e5eaf4;background:#fff;flex-shrink:0;}
+.chat-input{flex:1;border:2px solid #d0dae8;border-radius:22px;padding:9px 16px;font-size:13px;font-family:inherit;outline:none;transition:border .2s;background:#f6f9ff;}
+.chat-input:focus{border-color:#1976D2;}
+.chat-send-btn{width:38px;height:38px;background:linear-gradient(135deg,#003366,#1976D2);color:#fff;border:none;border-radius:50%;font-size:15px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.chat-send-btn:hover{transform:scale(1.1);}
+.chat-send-btn:active{transform:scale(.95);}
+.chat-input-hint{font-size:10px;color:#b0bec5;text-align:center;padding:0 12px 8px;background:#fff;flex-shrink:0;}
+/* Nav auth */
+.nav-auth{background:rgba(200,160,64,.18);border:1px solid rgba(200,160,64,.45);border-radius:20px;padding:5px 14px !important;}
+.nav-auth:hover{background:rgba(200,160,64,.38) !important;}
+/* Sidebar auth */
+.sidebar-auth-row{padding:10px 20px 4px;border-top:1px solid rgba(255,255,255,.08);margin-top:8px;}
+.sidebar-login-btn{display:block;padding:10px 16px;background:linear-gradient(135deg,rgba(200,160,64,.25),rgba(200,160,64,.15));border:1px solid rgba(200,160,64,.4);border-radius:12px;color:#fff !important;font-weight:800;font-size:13px;text-align:center;text-decoration:none;transition:all .2s;}
+.sidebar-login-btn:hover{background:linear-gradient(135deg,rgba(200,160,64,.4),rgba(200,160,64,.25));}
+.sidebar-logout-btn{width:100%;padding:10px 16px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:12px;color:#fca5a5;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;transition:all .2s;display:block;}
+.sidebar-logout-btn:hover{background:rgba(239,68,68,.28);}
+.sidebar-user-name{font-size:11px;color:rgba(255,255,255,.45);font-weight:700;padding:0 4px 6px;display:block;}
+</style>
+
+
+
+<!-- ══════════════════════════════════════════
+     APP GATE — показывается при первом открытии
+     если пользователь не вошёл
+══════════════════════════════════════════ -->
+
+
+<style>
+/* ══ CARD ══ */
+
+to{opacity:1;transform:none}}
+
+22%,100%{left:220%}}
+
+/* Icon */
+
+
+50%{box-shadow:0 0 0 16px rgba(25,118,210,0),0 14px 44px rgba(0,51,102,.65)}}
+.gate-icon svg{width:54px;height:54px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.35));}
+
+100%{transform:rotate(360deg)}}
+
+/* Text */
+
+.gate-title em{font-style:normal;background:linear-gradient(90deg,#c8a040,#f0c040);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
+
+
+
+/* Login button */
+
+.gate-login-btn:hover{transform:translateY(-3px);box-shadow:0 12px 36px rgba(0,51,102,.6);}
+.gate-login-btn:active{transform:scale(.97);}
+
+
+.gate-login-btn:hover 
+
+
+
+/* Features row */
+
+.gf-item{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:rgba(255,255,255,.35);font-weight:700;}
+.gf-item span:first-child{font-size:20px;filter:grayscale(.3);opacity:.7;}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:460px){}
+
+/* Fade out animation */
+
+}
+</style>
+
+
+
+
+<script>
+document.addEventListener('click', function(e){
+  const wrap = document.getElementById('nav-user-wrap');
+  const menu = document.getElementById('nav-user-menu');
+  if(menu && wrap && !wrap.contains(e.target)) menu.style.display='none';
+});
+
+/* ══════════════════════════════════════════
+   MATERIALS FROM SUPABASE
+══════════════════════════════════════════ */
+async function loadSectionMaterials(section) {
+  try {
+    const r = await fetch(
+      `${SB_URL}/rest/v1/pedagog_materials?section=eq.${section}&select=*&order=created_at.desc`,
+      { headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON } }
+    );
+    return (await r.json()) || [];
+  } catch(e) { return []; }
+}
+
+async function renderMetodichka() {
+  const loading = document.getElementById('met-loading');
+  const list    = document.getElementById('met-list');
+  const empty   = document.getElementById('met-empty');
+  if (!list) return;
+  const rows = await loadSectionMaterials('metodichka');
+  _metData = rows || [];
+  if (loading) loading.style.display = 'none';
+  if (!rows.length) { if(empty) empty.style.display = 'block'; return; }
+  list.innerHTML = rows.map(m => {
+    const ext  = m.file_type || 'pdf';
+    const icon = ext === 'pdf' ? '📄' : ext.includes('ppt') ? '📊' : '📝';
+    const desc = m.description || '';
+    return `<div class="doc-card">
+      <div class="doc-icon">${icon}</div>
+      <div class="doc-info">
+        <h3>${m.title}</h3>
+        ${desc ? `<p>${desc}</p>` : ''}
+        <div class="doc-meta"><span class="tag">${ext.toUpperCase()}</span></div>
+      </div>
+      ${m.file_url
+        ? `<a class="download-btn" href="${m.file_url}" target="_blank" download>⬇ Скачать</a>`
+        : `<button class="download-btn" disabled style="opacity:.5">Нет файла</button>`
+      }
+    </div>`;
+  }).join('');
+}
+
+async function renderPresentations() {
+  const loading = document.getElementById('pres-loading');
+  const list    = document.getElementById('pres-list');
+  const empty   = document.getElementById('pres-empty');
+  if (!list) return;
+  const rows = await loadSectionMaterials('presentations');
+  _presData = rows || [];
+  if (loading) loading.style.display = 'none';
+  if (!rows.length) { if(empty) empty.style.display = 'block'; return; }
+  list.innerHTML = rows.map(m => {
+    const ext  = m.file_type || 'pptx';
+    const icon = ext.includes('ppt') ? '📊' : ext === 'pdf' ? '📄' : '📝';
+    const desc = m.description || '';
+    return `<div class="pres-card">
+      <div class="pres-preview">${icon}</div>
+      <div class="pres-info">
+        <h3>${m.title}</h3>
+        ${desc ? `<p>${desc}</p>` : ''}
+        <div class="pres-meta"><span class="tag">${ext.toUpperCase()}</span></div>
+      </div>
+      ${m.file_url
+        ? `<a class="download-btn" href="${m.file_url}" target="_blank" download>⬇ Скачать</a>`
+        : `<button class="download-btn" disabled style="opacity:.5">Нет файла</button>`
+      }
+    </div>`;
+  }).join('');
+}
+
+async function renderTalks() {
+  const loading = document.getElementById('talks-loading');
+  const list    = document.getElementById('talks-dyn-list');
+  const empty   = document.getElementById('talks-dyn-empty');
+  if (!list) return;
+  const rows = await loadSectionMaterials('talks');
+  _talksData = rows || [];
+  if (loading) loading.style.display = 'none';
+  if (!rows.length) { if(empty) empty.style.display = 'block'; return; }
+  list.innerHTML = rows.map(m => {
+    const ext  = m.file_type || 'pdf';
+    const icon = ext === 'pdf' ? '📄' : ext.includes('ppt') ? '📊' : '📝';
+    const desc = m.description || '';
+    return `<div class="doc-card">
+      <div class="doc-icon">${icon}</div>
+      <div class="doc-info">
+        <h3>${m.title}</h3>
+        ${desc ? `<p>${desc}</p>` : ''}
+        <div class="doc-meta"><span class="tag">${ext.toUpperCase()}</span></div>
+      </div>
+      ${m.file_url
+        ? `<a class="download-btn" href="${m.file_url}" target="_blank" download>⬇ Скачать</a>`
+        : `<button class="download-btn" disabled style="opacity:.5">Нет файла</button>`
+      }
+    </div>`;
+  }).join('');
+}
+
+// Load materials when section is shown
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('[data-section]');
+  if (!el) return;
+  const sec = el.dataset.section;
+  if (sec === 'metodichka')    setTimeout(renderMetodichka, 50);
+  if (sec === 'presentations') setTimeout(renderPresentations, 50);
+  if (sec === 'talks')         setTimeout(renderTalks, 50);
+});
+
+// Also load if user lands directly on that section
+(function() {
+  const hash = window.location.hash.replace('#','');
+  if (hash === 'metodichka')    setTimeout(renderMetodichka, 300);
+  if (hash === 'presentations') setTimeout(renderPresentations, 300);
+  if (hash === 'talks')         setTimeout(renderTalks, 300);
+})();
+</script>
+
+<script>
+/* ══ ЗАГРУЗКА МАТЕРИАЛОВ ИЗ SUPABASE ══ */
+(async function loadSiteMaterials() {
+  const SB_URL  = 'https://ljtogliylpubvkckpwyv.supabase.co';
+  const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqdG9nbGl5bHB1YnZrY2twd3l2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNzEzODQsImV4cCI6MjA4ODc0NzM4NH0.91EQ_EEfi8X09Vm0jmH12_35R6tf0BwtTGoX3K5lgfc';
+
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/pedagog_materials?select=*&order=created_at.desc`, {
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON }
+    });
+    const rows = await r.json();
+    if (!rows?.length) return;
+
+    const icons = { pdf:'📄', pptx:'📊', ppt:'📊', docx:'📝', doc:'📝' };
+    const sectionNames = { metodichka:'Методичка', presentations:'Презентации', talks:'Беседы' };
+
+    // Group by section
+    const bySection = {};
+    rows.forEach(m => {
+      if (!bySection[m.section]) bySection[m.section] = [];
+      bySection[m.section].push(m);
+    });
+
+    // Inject into metodichka
+    if (bySection.metodichka?.length) {
+      const el = document.querySelector('#section-metodichka .metodichka-list');
+      if (el) {
+        const dyn = bySection.metodichka.map(m => `
+          <div class="doc-card">
+            <div class="doc-icon">${icons[m.file_type] || '📎'}</div>
+            <div class="doc-info">
+              <h3>${m.title}</h3>
+              <p>${m.description || ''}</p>
+              <div class="doc-meta"><span class="tag">Методичка</span></div>
+            </div>
+            <a href="${m.file_url}" target="_blank" class="download-btn" download>⬇ Скачать</a>
+          </div>`).join('');
+        el.insertAdjacentHTML('afterbegin', dyn);
+      }
+    }
+
+    // Inject into presentations
+    if (bySection.presentations?.length) {
+      const el = document.querySelector('#section-presentations .pres-grid');
+      if (el) {
+        const dyn = bySection.presentations.map(m => `
+          <div class="pres-card">
+            <div class="pres-preview">${icons[m.file_type] || '📎'}</div>
+            <div class="pres-info">
+              <h3>${m.title}</h3>
+              <p>${m.description || ''}</p>
+              <div class="pres-meta"><span class="tag">Презентация</span></div>
+            </div>
+            <a href="${m.file_url}" target="_blank" class="download-btn" download>⬇ Скачать</a>
+          </div>`).join('');
+        el.insertAdjacentHTML('afterbegin', dyn);
+      }
+    }
+  } catch(e) { /* silent — static content still shows */ }
+})();
+
+/* ══ ПОИСК И ФИЛЬТРЫ ══ */
+let _metData = [], _presData = [], _talksData = [];
+
+function filterSection(prefix, query) {
+  query = query.toLowerCase().trim();
+  const data = prefix === 'met' ? _metData : prefix === 'pres' ? _presData : _talksData;
+  const listId = prefix === 'met' ? 'met-list' : prefix === 'pres' ? 'pres-list' : 'talks-dyn-list';
+  const activeType = document.querySelector(`#${prefix}-filters .filter-tab.active`)?.dataset?.type || 'all';
+  renderFiltered(data, listId, query, activeType);
+}
+
+function filterByType(prefix, type, btn) {
+  document.querySelectorAll(`#${prefix}-filters .filter-tab`).forEach(b => b.classList.remove('active'));
+  if (btn) { btn.classList.add('active'); btn.dataset.type = type; }
+  const query = document.getElementById(`${prefix}-search`)?.value?.toLowerCase() || '';
+  const data = prefix === 'met' ? _metData : prefix === 'pres' ? _presData : _talksData;
+  const listId = prefix === 'met' ? 'met-list' : prefix === 'pres' ? 'pres-list' : 'talks-dyn-list';
+  renderFiltered(data, listId, query, type);
+}
+
+function renderFiltered(data, listId, query, type) {
+  const el = document.getElementById(listId);
+  if (!el) return;
+  let filtered = data;
+  if (query) filtered = filtered.filter(m =>
+    (m.title||'').toLowerCase().includes(query) ||
+    (m.description||'').toLowerCase().includes(query)
+  );
+  if (type && type !== 'all') filtered = filtered.filter(m => m.file_type === type);
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty-msg">🔍 Ничего не найдено</div>';
+    return;
+  }
+  // Re-render using same card template
+  el.innerHTML = filtered.map(m => buildDocCard(m)).join('');
+}
+
+function buildDocCard(m) {
+  const icons = {pdf:'📄',pptx:'📊',ppt:'📊',docx:'📝',doc:'📝'};
+  const icon = icons[m.file_type] || '📎';
+  const desc = m.description ? `<p style="color:var(--text2);font-size:13px;margin:4px 0">${m.description}</p>` : '';
+  const date = new Date(m.created_at).toLocaleDateString('ru-RU');
+  return `<div class="doc-card">
+    <div class="doc-icon">${icon}</div>
+    <div class="doc-info">
+      <h3>${m.title}</h3>
+      ${desc}
+      <div class="doc-meta">
+        <span class="tag">${m.file_type?.toUpperCase()||'FILE'}</span>
+        <span style="color:var(--text3)">${date}</span>
+      </div>
+    </div>
+    ${m.file_url ? `<a href="${m.file_url}" target="_blank" class="download-btn">⬇ Скачать</a>` : ''}
+  </div>`;
+}
+
+/* ══ МЕРОПРИЯТИЯ ══ */
+async function loadEvents() {
+  const el = document.getElementById('events-list');
+  if (!el) return;
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const r = await fetch(
+      `${SB_URL}/rest/v1/portal_events?event_date=gte.${today}&select=*&order=event_date.asc&limit=5`,
+      { headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON } }
+    );
+    const rows = await r.json();
+    if (!rows?.length) { el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px;font-size:13px">Мероприятий не запланировано</div>'; return; }
+    const MONTHS = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+    el.innerHTML = rows.map(ev => {
+      const d = new Date(ev.event_date + 'T00:00:00');
+      const day = d.getDate();
+      const mon = MONTHS[d.getMonth()];
+      return `<div class="event-card" style="border-left-color:${ev.color||'#1976d2'}">
+        <div class="event-date-badge" style="background:${ev.color||'#1976d2'}">
+          <span class="day">${day}</span>
+          <span class="mon">${mon}</span>
+        </div>
+        <div class="event-info">
+          <div class="event-title">${ev.title}</div>
+          ${ev.description ? `<div class="event-desc">${ev.description}</div>` : ''}
+          <div class="event-meta">${ev.event_time ? '🕐 '+ev.event_time : ''}${ev.location ? ' · 📍 '+ev.location : ''}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = ''; }
+}
+
+/* ══ РАССЫЛКИ ══ */
+async function loadBroadcasts() {
+  const el = document.getElementById('broadcasts-list');
+  if (!el) return;
+  try {
+    const r = await fetch(
+      `${SB_URL}/rest/v1/portal_broadcasts?select=*&order=sent_at.desc&limit=5`,
+      { headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON } }
+    );
+    const rows = await r.json();
+    if (!rows?.length) { el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px;font-size:13px">Объявлений нет</div>'; return; }
+    el.innerHTML = rows.map(b => {
+      const d = new Date(b.sent_at).toLocaleDateString('ru-RU', {day:'2-digit',month:'long'});
+      return `<div class="broadcast-item">
+        <div class="broadcast-title">📢 ${b.title}</div>
+        <div class="broadcast-body">${b.message}</div>
+        <div class="broadcast-meta">${d} · ${b.sent_by}</div>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = ''; }
+}
+
+// Загружаем при старте
+document.addEventListener('DOMContentLoaded', () => {
+  loadEvents();
+  loadBroadcasts();
+});
+
+if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});</script>
+
+<script>
+// Инициализация темы
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof THEME !== 'undefined') THEME.init();
+  loadEvents();
+  loadBroadcasts();
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+});
+</script>
+
+<script>
+/* ══ ИНИЦИАЛИЗАЦИЯ ПОЛЬЗОВАТЕЛЯ В SIDEBAR/NAV ══ */
+document.addEventListener('DOMContentLoaded', function() {
+  var raw = sessionStorage.getItem('psess_user') || localStorage.getItem('psess_user');
+  if (!raw) {
+    // Токен есть но нет кеша — тихо грузим из Supabase
+    return;
+  }
+  // Синхронизируем в оба хранилища
+  sessionStorage.setItem('psess_user', raw);
+  localStorage.setItem('psess_user', raw);
+  try {
+    var user = JSON.parse(raw);
+    initUserBlocks(user);
+  } catch(e) {}
+});
+
+function initUserBlocks(user) {
+  if (!user) return;
+  var ini  = (user.name || '?')[0].toUpperCase();
+  var fn   = user.name.split(' ')[0];
+  var role = user.role === 'admin' ? '🛡️ Администратор' : '👩‍🏫 Педагог';
+
+  // ── SIDEBAR user block ──
+  var sb = document.getElementById('sb-user-block');
+  if (sb) sb.style.display = 'block';
+  var sbAv = document.getElementById('sb-av');
+  var sbNm = document.getElementById('sb-name');
+  var sbRl = document.getElementById('sb-role');
+  if (sbAv) sbAv.textContent = ini;
+  if (sbNm) sbNm.textContent = user.name;
+  if (sbRl) sbRl.textContent = role;
+
+  // Если админ — добавляем ссылку на панель
+  if (user.role === 'admin') {
+    var sb_block = document.getElementById('sb-user-block');
+    if (sb_block) {
+      var adminLink = document.createElement('a');
+      adminLink.href = 'admin.html';
+      adminLink.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:600;color:#fca5a5;';
+      adminLink.textContent = '🛡️ Панель админа';
+      adminLink.onmouseover = function(){ this.style.background='rgba(239,68,68,0.1)'; };
+      adminLink.onmouseout  = function(){ this.style.background='transparent'; };
+      var links = sb_block.querySelector('div:last-child');
+      if (links) links.insertBefore(adminLink, links.firstChild);
+    }
+  }
+
+  // ── NAV user zone ──
+  var nuz = document.getElementById('nav-user-zone');
+  if (nuz) {
+    nuz.style.display = 'flex';
+    var navAv = document.getElementById('nav-av');
+    var navUn = document.getElementById('nav-uname');
+    if (navAv) navAv.textContent = ini;
+    if (navUn) navUn.textContent = fn;
+  }
+
+  // Бейдж чата
+  startChatBadge(user.id);
+}
+
+function doLogout() {
+  localStorage.removeItem('psess_token');
+  localStorage.removeItem('psess_user');
+  sessionStorage.removeItem('psess_token');
+  sessionStorage.removeItem('psess_user');
+  window.location.replace('./auth.html');
+}
+
+/* ── Бейдж чата ── */
+var _bdgTimer = null;
+var SB_URL_IDX  = 'https://ljtogliylpubvkckpwyv.supabase.co';
+var SB_ANON_IDX = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqdG9nbGl5bHB1YnZrY2twd3l2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNzEzODQsImV4cCI6MjA4ODc0NzM4NH0.91EQ_EEfi8X09Vm0jmH12_35R6tf0BwtTGoX3K5lgfc';
+
+function startChatBadge(uid) {
+  clearInterval(_bdgTimer);
+  updateChatBadge(uid);
+  _bdgTimer = setInterval(function(){ updateChatBadge(uid); }, 30000);
+}
+
+async function updateChatBadge(uid) {
+  try {
+    var lv = localStorage.getItem('chat_last_visit') || '1970-01-01T00:00:00Z';
+    var r1 = await fetch(
+      SB_URL_IDX + '/rest/v1/chat_participants?user_id=eq.' + encodeURIComponent(uid) + '&select=conversation_id',
+      {headers:{'apikey':SB_ANON_IDX,'Authorization':'Bearer '+SB_ANON_IDX}}
+    );
+    var pts = await r1.json();
+    if (!pts || !pts.length) return;
+    var ids = pts.map(function(p){ return p.conversation_id; });
+    var r2 = await fetch(
+      SB_URL_IDX + '/rest/v1/chat_messages_v2?conversation_id=in.(' + ids.map(encodeURIComponent).join(',') +
+      ')&created_at=gt.' + encodeURIComponent(lv) + '&user_id=neq.' + encodeURIComponent(uid) + '&select=id',
+      {headers:{'apikey':SB_ANON_IDX,'Authorization':'Bearer '+SB_ANON_IDX}}
+    );
+    var msgs = await r2.json();
+    var cnt  = msgs ? msgs.length : 0;
+    // Nav badge
+    var b1 = document.getElementById('nav-chat-badge');
+    var b2 = document.getElementById('sb-chat-badge');
+    if (cnt > 0) {
+      var txt = cnt > 99 ? '99+' : String(cnt);
+      if (b1) { b1.textContent = txt; b1.style.display = 'flex'; }
+      if (b2) { b2.textContent = txt; b2.style.display = 'flex'; }
+    } else {
+      if (b1) b1.style.display = 'none';
+      if (b2) b2.style.display = 'none';
+    }
+  } catch(e) {}
+}
+
+function toggleTheme() {
+  var cur  = localStorage.getItem('portal_theme') || 'dark';
+  var next = cur === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('portal_theme', next);
+  document.documentElement.setAttribute('data-theme', next === 'light' ? 'light' : '');
+  var btn = document.getElementById('theme-toggle-btn');
+  if (btn) btn.textContent = next === 'light' ? '☀️' : '🌙';
+}
+</script>
+</body>
+</html>

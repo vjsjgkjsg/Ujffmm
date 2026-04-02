@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Вход — Цифровой навигатор педагога</title>
+<base href="./">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  min-height:100vh;background:#090f1a;
+  font-family:'Segoe UI',system-ui,sans-serif;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+
+/* ── ФОН ── */
+.bg{position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(25,118,210,.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(124,58,237,.12) 0%, transparent 50%),
+    #090f1a;
+}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.45;animation:flt 8s ease-in-out infinite}
+.o1{width:400px;height:400px;background:#1976d2;top:-100px;left:-100px;animation-delay:0s}
+.o2{width:300px;height:300px;background:#7c3aed;bottom:-80px;right:-80px;animation-delay:-3s}
+.o3{width:200px;height:200px;background:#059669;bottom:30%;left:30%;animation-delay:-5s}
+@keyframes flt{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(20px,-20px) scale(1.05)}66%{transform:translate(-15px,15px) scale(.95)}}
+
+/* ── КАРТОЧКА ── */
+.card{
+  position:relative;z-index:1;width:100%;max-width:420px;margin:20px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  border-radius:24px;padding:36px 32px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 24px 64px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08);
+  animation:up .5s ease;
+}
+@keyframes up{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── ЛОГО ── */
+.logo{text-align:center;margin-bottom:24px}
+.logo-icon{font-size:46px;display:block;margin-bottom:8px;filter:drop-shadow(0 0 18px rgba(25,118,210,.6))}
+.logo-title{font-size:19px;font-weight:800;color:#fff}
+.logo-sub{font-size:12px;color:rgba(255,255,255,.4);margin-top:3px}
+
+/* ── ТАБЫ ── */
+.tabs{display:flex;background:rgba(255,255,255,.05);border-radius:12px;padding:4px;margin-bottom:24px;gap:4px}
+.tab{flex:1;padding:9px;border:none;background:none;border-radius:9px;
+  color:rgba(255,255,255,.4);font-size:14px;font-weight:700;cursor:pointer;
+  transition:all .2s;font-family:inherit}
+.tab.active{background:#1976d2;color:#fff;box-shadow:0 3px 12px rgba(25,118,210,.4)}
+
+/* ── ПОЛЯ ── */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.field input{
+  width:100%;padding:12px 16px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;color:#fff;font-size:15px;font-family:inherit;outline:none;transition:all .2s;
+}
+.field input::placeholder{color:rgba(255,255,255,.2)}
+.field input:focus{border-color:#1976d2;background:rgba(25,118,210,.08);box-shadow:0 0 0 3px rgba(25,118,210,.15)}
+.iw{position:relative}
+.iw input{padding-right:44px}
+.eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;color:rgba(255,255,255,.3);font-size:17px;padding:4px}
+.eye:hover{color:rgba(255,255,255,.7)}
+
+/* ── СИЛА ПАРОЛЯ ── */
+.pbars{display:flex;gap:4px;margin-top:5px}
+.pb{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08);transition:background .3s}
+.pb.w{background:#ef4444}.pb.m{background:#f59e0b}.pb.s{background:#22c55e}
+
+/* ── КНОПКА ── */
+.btn-main{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,#1976d2,#1565c0);color:#fff;
+  border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;
+  font-family:inherit;margin-top:4px;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 4px 18px rgba(25,118,210,.35);
+}
+.btn-main:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(25,118,210,.5)}
+.btn-main:active{transform:translateY(0)}
+.btn-main:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+  border-radius:50%;animation:sp .7s linear infinite;display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+.btn-main.loading .spin{display:block}
+.btn-main.loading .txt{display:none}
+
+/* ── СООБЩЕНИЕ ── */
+.msg{padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;
+  margin-top:12px;display:none;animation:up .2s ease}
+.msg.err{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+.msg.ok{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#86efac}
+
+/* ── ЭКРАН УСПЕХА ── */
+.success{display:none;text-align:center;padding:20px 0;animation:up .4s ease}
+.success.show{display:block}
+.s-icon{font-size:58px;display:block;margin-bottom:14px;
+  animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.s-title{font-size:21px;font-weight:800;color:#fff;margin-bottom:6px}
+.s-sub{font-size:14px;color:rgba(255,255,255,.5)}
+.progbar{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:18px;overflow:hidden}
+.progfill{height:100%;background:linear-gradient(90deg,#1976d2,#22c55e);border-radius:2px;
+  width:0%;transition:width 2s linear}
+
+/* ── PIN ЭКРАН ── */
+.pin-screen{display:none;text-align:center}
+.pin-dots{display:flex;gap:12px;justify-content:center;margin:20px 0}
+.pd{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.1);
+  border:2px solid rgba(255,255,255,.2);transition:all .15s}
+.pd.on{background:#1976d2;border-color:#1976d2;box-shadow:0 0 10px rgba(25,118,210,.6)}
+.pd.err{background:#ef4444;border-color:#ef4444;animation:shake .3s ease}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto}
+.np{padding:15px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;color:#fff;font-size:20px;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:all .15s}
+.np:hover{background:rgba(255,255,255,.12);transform:scale(1.05)}
+.np:active{transform:scale(.95)}
+.np.sm{font-size:13px;color:rgba(255,255,255,.4)}
+
+/* ── СМЕНА ПАРОЛЯ ── */
+.chpwd{display:none}
+.footer{text-align:center;margin-top:18px;font-size:12px;color:rgba(255,255,255,.2)}
+
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+    /* ══ МОБИЛЬНЫЕ УЛУЧШЕНИЯ ══ */
+    @media (max-width: 480px) {
+      .card { padding: 28px 20px; margin: 12px; }
+      .logo-icon { font-size: 40px; }
+      .logo-title { font-size: 17px; }
+      .tabs { margin-bottom: 20px; }
+      .tab { font-size: 13px; padding: 8px; }
+      .field input { font-size: 16px; } /* Prevents iOS zoom */
+      .btn-main { padding: 14px; font-size: 14px; }
+      .numpad { max-width: 220px; }
+      .np { padding: 13px; font-size: 18px; }
+    }
+    @media (max-height: 700px) {
+      .card { padding: 24px 20px; }
+      .logo { margin-bottom: 16px; }
+      .logo-icon { font-size: 36px; }
+    }
+</style>
+</head>
+<body>
+<div class="bg"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
+
+<div class="card">
+  <!-- ЛОГО -->
+  <div class="logo">
+    <span class="logo-icon">🎓</span>
+    <div class="logo-title">Цифровой навигатор</div>
+    <div class="logo-sub">г. Петропавловск · СКО</div>
+  </div>
+
+  <!-- ЭКРАН УСПЕХА -->
+  <div class="success" id="scr-success">
+    <span class="s-icon" id="s-icon">✅</span>
+    <div class="s-title" id="s-title">Добро пожаловать!</div>
+    <div class="s-sub" id="s-sub">Переход...</div>
+    <div class="progbar"><div class="progfill" id="s-prog"></div></div>
+  </div>
+
+  <!-- PIN ЭКРАН -->
+  <div class="pin-screen" id="scr-pin">
+    <div class="logo-icon" style="font-size:36px;margin-bottom:8px">🛡️</div>
+    <div class="logo-title" style="margin-bottom:4px">Подтверждение</div>
+    <div class="logo-sub" style="margin-bottom:4px">Введите PIN-код администратора</div>
+    <div class="pin-dots">
+      <div class="pd" id="pd0"></div><div class="pd" id="pd1"></div>
+      <div class="pd" id="pd2"></div><div class="pd" id="pd3"></div>
+    </div>
+    <div class="numpad">
+      <button class="np" onclick="pinPress('1')">1</button>
+      <button class="np" onclick="pinPress('2')">2</button>
+      <button class="np" onclick="pinPress('3')">3</button>
+      <button class="np" onclick="pinPress('4')">4</button>
+      <button class="np" onclick="pinPress('5')">5</button>
+      <button class="np" onclick="pinPress('6')">6</button>
+      <button class="np" onclick="pinPress('7')">7</button>
+      <button class="np" onclick="pinPress('8')">8</button>
+      <button class="np" onclick="pinPress('9')">9</button>
+      <button class="np sm" onclick="pinClear()">Очист.</button>
+      <button class="np" onclick="pinPress('0')">0</button>
+      <button class="np" onclick="pinBack()">⌫</button>
+    </div>
+    <div class="msg" id="msg-pin"></div>
+  </div>
+
+  <!-- СМЕНА ПАРОЛЯ (первый вход) -->
+  <div class="chpwd" id="scr-chpwd">
+    <div class="logo-icon" style="font-size:36px;margin-bottom:8px">🔐</div>
+    <div class="logo-title" style="margin-bottom:4px">Смена пароля</div>
+    <div class="logo-sub" style="margin-bottom:16px">Придумайте личный пароль для входа</div>
+    <div class="field">
+      <label>Новый пароль</label>
+      <div class="iw">
+        <input type="password" id="cp-pwd" placeholder="Минимум 6 символов" oninput="pwdStr(this.value,'cp')">
+        <button class="eye" onclick="eyeToggle('cp-pwd',this)">👁</button>
+      </div>
+      <div class="pbars"><div class="pb" id="cp1"></div><div class="pb" id="cp2"></div><div class="pb" id="cp3"></div></div>
+    </div>
+    <div class="field">
+      <label>Повторите пароль</label>
+      <div class="iw">
+        <input type="password" id="cp-pwd2" placeholder="Повторите пароль">
+        <button class="eye" onclick="eyeToggle('cp-pwd2',this)">👁</button>
+      </div>
+    </div>
+    <button class="btn-main" id="btn-cp" onclick="doChangePwd()">
+      <span class="txt">Сохранить пароль →</span><div class="spin"></div>
+    </button>
+    <div class="msg" id="msg-cp"></div>
+  </div>
+
+  <!-- ФОРМА ВХОДА/РЕГИСТРАЦИИ -->
+  <div id="scr-auth">
+    <div class="tabs">
+      <button class="tab active" id="tab-login" onclick="switchTab('login')">Войти</button>
+      <button class="tab" id="tab-reg" onclick="switchTab('reg')">Регистрация</button>
+    </div>
+
+    <!-- ВХОД -->
+    <div id="panel-login">
+      <div class="field">
+        <label>Логин</label>
+        <input type="text" id="l-login" placeholder="Ваш логин" autocapitalize="none" autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Пароль</label>
+        <div class="iw">
+          <input type="password" id="l-pwd" placeholder="Ваш пароль" autocomplete="current-password">
+          <button class="eye" onclick="eyeToggle('l-pwd',this)">👁</button>
+        </div>
+      </div>
+      <button class="btn-main" id="btn-login" onclick="doLogin()">
+        <span class="txt">Войти в портал →</span><div class="spin"></div>
+      </button>
+      <div class="msg" id="msg-login"></div>
+    </div>
+
+    <!-- РЕГИСТРАЦИЯ -->
+    <div id="panel-reg" style="display:none">
+      <div class="field">
+        <label>Имя и фамилия</label>
+        <input type="text" id="r-name" placeholder="Например: Айгуль Сейткали" autocomplete="name">
+      </div>
+      <div class="field">
+        <label>Логин</label>
+        <input type="text" id="r-login" placeholder="Только латиница и цифры" autocapitalize="none" autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Пароль</label>
+        <div class="iw">
+          <input type="password" id="r-pwd" placeholder="Минимум 6 символов" oninput="pwdStr(this.value,'r')" autocomplete="new-password">
+          <button class="eye" onclick="eyeToggle('r-pwd',this)">👁</button>
+        </div>
+        <div class="pbars"><div class="pb" id="r1"></div><div class="pb" id="r2"></div><div class="pb" id="r3"></div></div>
+      </div>
+      <div class="field">
+        <label>Повторите пароль</label>
+        <div class="iw">
+          <input type="password" id="r-pwd2" placeholder="Повторите пароль" autocomplete="new-password">
+          <button class="eye" onclick="eyeToggle('r-pwd2',this)">👁</button>
+        </div>
+      </div>
+      <button class="btn-main" id="btn-reg" onclick="doRegister()">
+        <span class="txt">Создать аккаунт →</span><div class="spin"></div>
+      </button>
+      <div class="msg" id="msg-reg"></div>
+    </div>
+  </div>
+
+  <div class="footer">Портал педагогов дошкольного образования СКО</div>
+</div>
+
+<script>
+/* ══ CONFIG ══ */
+const SB_URL  = 'https://ljtogliylpubvkckpwyv.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqdG9nbGl5bHB1YnZrY2twd3l2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNzEzODQsImV4cCI6MjA4ODc0NzM4NH0.91EQ_EEfi8X09Vm0jmH12_35R6tf0BwtTGoX3K5lgfc';
+const SALT    = 'pedagog_sko_2025_';
+const TG_BOT  = '8222635506:AAGalT-Y-31jQ6VWKZHBcqqmeGc27M_c1Lk';
+const TG_CHAT = '8129422076';
+
+let _pendingUser = null;
+let _pinVal = '';
+
+/* ══ SHA256 ══ */
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ══ Supabase ══ */
+async function sb(path, opts={}) {
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+      headers:{
+        'apikey':SB_ANON,'Authorization':'Bearer '+SB_ANON,
+        'Content-Type':'application/json',
+        'Prefer': opts.method==='POST' ? 'return=representation' : 'return=minimal',
+        ...(opts.headers||{})
+      },
+      signal: ctrl.signal, ...opts
+    });
+    clearTimeout(tid);
+    if (opts.method==='DELETE'||opts.method==='PATCH') return true;
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.message||data.error||r.statusText);
+    return data;
+  } catch(e) { clearTimeout(tid); throw e; }
+}
+
+/* ══ Токен ══ */
+function genToken() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function saveToken(token) {
+  localStorage.setItem('psess_token', token);
+  sessionStorage.setItem('psess_token', token);
+}
+
+function saveUser(user) {
+  const data = JSON.stringify({ id: user.id, login: user.login, name: user.name, role: user.role || 'teacher' });
+  sessionStorage.setItem('psess_user', data);
+  localStorage.setItem('psess_user', data);
+}
+
+/* ══ Telegram ══ */
+function tg(text) {
+  fetch(`https://api.telegram.org/bot${TG_BOT}/sendMessage`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:TG_CHAT,text,parse_mode:'HTML'})
+  }).catch(()=>{});
+}
+
+/* ══ UI ══ */
+function show(id){ document.getElementById(id).style.display='block'; }
+function hide(id){ document.getElementById(id).style.display='none'; }
+function showMsg(id,type,text){
+  const el=document.getElementById(id);
+  el.className='msg '+type; el.textContent=text; el.style.display='block';
+}
+function hideMsg(id){ document.getElementById(id).style.display='none'; }
+function setLoad(id,on){
+  const btn=document.getElementById(id);
+  btn.disabled=on; btn.classList.toggle('loading',on);
+}
+
+/* ══ ПЕРЕКЛЮЧЕНИЕ ТАБОВ ══ */
+function switchTab(tab) {
+  document.getElementById('panel-login').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('panel-reg').style.display   = tab==='reg'   ? 'block' : 'none';
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
+  document.getElementById('tab-reg').classList.toggle('active',   tab==='reg');
+  hideMsg('msg-login');
+  hideMsg('msg-reg');
+}
+
+/* ══ ПОКАЗАТЬ ЭКРАН ══ */
+function showScreen(name) {
+  ['scr-auth','scr-pin','scr-chpwd','scr-success'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+  const el=document.getElementById('scr-'+name);
+  if(el) el.style.display='block';
+  if(name==='success') document.getElementById('scr-success').classList.add('show');
+}
+
+/* ══ УСПЕХ И РЕДИРЕКТ ══ */
+function showSuccess(name, isAdmin, isReg) {
+  showScreen('success');
+  document.getElementById('s-icon').textContent  = isReg ? '🎉' : isAdmin ? '🛡️' : '✅';
+  document.getElementById('s-title').textContent = (isReg?'Добро пожаловать, ':'С возвращением, ') + name + '!';
+  document.getElementById('s-sub').textContent   = isAdmin ? 'Переход в панель управления...' : 'Переход на портал...';
+  setTimeout(()=>{ document.getElementById('s-prog').style.width='100%'; }, 50);
+  setTimeout(()=>{ window.location.replace(isAdmin ? './admin.html' : './index.html'); }, 2200);
+}
+
+/* ══ СОЗДАТЬ СЕССИЮ ══ */
+async function createSession(user) {
+  const token   = genToken();
+  const expires = new Date(Date.now() + 24*3600*1000).toISOString();
+  await sb('user_sessions', {
+    method:'POST',
+    body: JSON.stringify({
+      token, user_id:user.id, login:user.login,
+      name:user.name, role:user.role||'teacher', expires_at:expires
+    })
+  });
+  saveToken(token);
+  saveUser(user);
+}
+
+/* ══ СИЛА ПАРОЛЯ ══ */
+function pwdStr(val, prefix) {
+  const bars = [prefix+'1',prefix+'2',prefix+'3'];
+  bars.forEach(b=>{ const el=document.getElementById(b); if(el) el.className='pb'; });
+  if (!val) return;
+  const strong = val.length>=8 && /[A-Z]/.test(val) && /[0-9]/.test(val);
+  const medium = val.length>=6;
+  if (strong) bars.forEach(b=>{ const el=document.getElementById(b); if(el) el.classList.add('s'); });
+  else if (medium) { 
+    [prefix+'1',prefix+'2'].forEach(b=>{ const el=document.getElementById(b); if(el) el.classList.add('m'); });
+  } else { 
+    const el=document.getElementById(prefix+'1'); if(el) el.classList.add('w');
+  }
+}
+
+function eyeToggle(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type==='password' ? 'text' : 'password';
+  btn.textContent = inp.type==='password' ? '👁' : '🙈';
+}
+
+/* ══ Enter ══ */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const authVisible = document.getElementById('scr-auth')?.style.display !== 'none';
+  if (!authVisible) return;
+  const regVisible = document.getElementById('panel-reg')?.style.display !== 'none';
+  if (regVisible) doRegister();
+  else doLogin();
+});
+
+/* ══ AUTO TAB from URL ══ */
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('tab') === 'reg') switchTab('reg');
+})();
+
+/* ══════════════════════════
+   ВХОД
+══════════════════════════ */
+async function doLogin() {
+  const login = document.getElementById('l-login').value.trim().toLowerCase();
+  const pwd   = document.getElementById('l-pwd').value;
+  if (!login) { showMsg('msg-login','err','Введите логин'); return; }
+  if (!pwd)   { showMsg('msg-login','err','Введите пароль'); return; }
+
+  setLoad('btn-login', true);
+  hideMsg('msg-login');
+
+  try {
+    const pwdHash = await sha256(SALT + pwd);
+    const rows = await sb(
+      `pedagog_users?login=eq.${encodeURIComponent(login)}&select=id,login,name,role,password_hash,pin_hash,must_change_password&limit=1`
+    );
+
+    if (!rows?.length) {
+      showMsg('msg-login','err','❌ Пользователь не найден');
+      setLoad('btn-login', false);
+      return;
+    }
+
+    const user = rows[0];
+
+    if (user.password_hash !== pwdHash) {
+      showMsg('msg-login','err','❌ Неверный пароль');
+      setLoad('btn-login', false);
+      return;
+    }
+
+    setLoad('btn-login', false);
+
+    // Первый вход — смена пароля
+    if (user.must_change_password) {
+      _pendingUser = user;
+      showScreen('chpwd');
+      return;
+    }
+
+    // Админ — PIN экран
+    if (user.role === 'admin') {
+      _pendingUser = user;
+      _pinVal = '';
+      updatePinDots();
+      showScreen('pin');
+      return;
+    }
+
+    // Обычный пользователь — создаём сессию
+    await createSession(user);
+    tg(`🔑 Вход: <b>${user.name}</b> (${user.login})`);
+    showSuccess(user.name, false, false);
+
+  } catch(e) {
+    showMsg('msg-login','err','⚠️ Ошибка: ' + e.message);
+    setLoad('btn-login', false);
+  }
+}
+
+/* ══════════════════════════
+   РЕГИСТРАЦИЯ
+══════════════════════════ */
+async function doRegister() {
+  const name  = document.getElementById('r-name').value.trim();
+  const login = document.getElementById('r-login').value.trim().toLowerCase();
+  const pwd   = document.getElementById('r-pwd').value;
+  const pwd2  = document.getElementById('r-pwd2').value;
+
+  if (!name)           { showMsg('msg-reg','err','Введите имя'); return; }
+  if (!login)          { showMsg('msg-reg','err','Введите логин'); return; }
+  if (!/^[a-z0-9_]{3,30}$/.test(login)) {
+    showMsg('msg-reg','err','Логин: только латиница, цифры, _ (3-30 символов)'); return;
+  }
+  if (pwd.length < 6)  { showMsg('msg-reg','err','Пароль минимум 6 символов'); return; }
+  if (pwd !== pwd2)    { showMsg('msg-reg','err','Пароли не совпадают'); return; }
+
+  setLoad('btn-reg', true);
+  hideMsg('msg-reg');
+
+  try {
+    const ex = await sb(`pedagog_users?login=eq.${encodeURIComponent(login)}&select=id&limit=1`);
+    if (ex?.length) {
+      showMsg('msg-reg','err','❌ Логин уже занят');
+      setLoad('btn-reg', false);
+      return;
+    }
+
+    const pwdHash = await sha256(SALT + pwd);
+    const users = await sb('pedagog_users', {
+      method:'POST',
+      body: JSON.stringify({login, name, password_hash:pwdHash, pin_hash:null, role:'teacher', must_change_password:false})
+    });
+
+    const user = Array.isArray(users) ? users[0] : users;
+    await createSession(user);
+    tg(`🎉 Регистрация: <b>${name}</b> (${login})`);
+    showSuccess(name, false, true);
+
+  } catch(e) {
+    showMsg('msg-reg','err','⚠️ Ошибка: ' + e.message);
+    setLoad('btn-reg', false);
+  }
+}
+
+/* ══════════════════════════
+   PIN (Только для админа)
+══════════════════════════ */
+function updatePinDots() {
+  for (let i=0; i<4; i++) {
+    const dot = document.getElementById('pd'+i);
+    dot.classList.toggle('on', i < _pinVal.length);
+    dot.classList.remove('err');
+  }
+}
+
+function pinPress(d) {
+  if (_pinVal.length >= 4) return;
+  _pinVal += d;
+  updatePinDots();
+  if (_pinVal.length === 4) setTimeout(checkPin, 150);
+}
+function pinBack()  { _pinVal = _pinVal.slice(0,-1); updatePinDots(); }
+function pinClear() { _pinVal = ''; updatePinDots(); hideMsg('msg-pin'); }
+
+async function checkPin() {
+  if (!_pendingUser) return;
+  try {
+    const pinHash = await sha256(SALT + _pinVal);
+    if (pinHash !== _pendingUser.pin_hash) {
+      for (let i=0; i<4; i++) document.getElementById('pd'+i).classList.add('err');
+      showMsg('msg-pin','err','❌ Неверный PIN');
+      setTimeout(()=>{ _pinVal=''; updatePinDots(); hideMsg('msg-pin'); }, 1200);
+      return;
+    }
+    await createSession(_pendingUser);
+    tg(`🛡️ Вход АДМИНА: <b>${_pendingUser.name}</b>`);
+    showSuccess(_pendingUser.name, true, false);
+  } catch(e) {
+    showMsg('msg-pin','err','Ошибка: '+e.message);
+    setTimeout(()=>{ _pinVal=''; updatePinDots(); }, 1000);
+  }
+}
+
+/* ══════════════════════════
+   СМЕНА ПАРОЛЯ (первый вход)
+══════════════════════════ */
+async function doChangePwd() {
+  const pwd  = document.getElementById('cp-pwd').value;
+  const pwd2 = document.getElementById('cp-pwd2').value;
+  if (pwd.length < 6)  { showMsg('msg-cp','err','Минимум 6 символов'); return; }
+  if (pwd !== pwd2)    { showMsg('msg-cp','err','Пароли не совпадают'); return; }
+  if (!_pendingUser)   { showMsg('msg-cp','err','Ошибка — войдите заново'); return; }
+
+  setLoad('btn-cp', true);
+
+  try {
+    const newHash = await sha256(SALT + pwd);
+    await sb(`pedagog_users?id=eq.${encodeURIComponent(_pendingUser.id)}`, {
+      method:'PATCH',
+      body: JSON.stringify({password_hash:newHash, must_change_password:false})
+    });
+    _pendingUser.must_change_password = false;
+    await createSession(_pendingUser);
+    tg(`🔑 Первый вход + смена пароля: <b>${_pendingUser.name}</b>`);
+    showSuccess(_pendingUser.name, false, false);
+  } catch(e) {
+    showMsg('msg-cp','err','Ошибка: '+e.message);
+    setLoad('btn-cp', false);
+  }
+}
+</script>
+</body>
+</html>
